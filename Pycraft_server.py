@@ -14,7 +14,10 @@ MAX_PLAYERS = 4
 
 players = []
 conns = []
+updates = {}
 iMapSize = 64
+
+locker = threading.Lock()
 
 aMap = [[0 for x in range(iMapSize)] for y in range(iMapSize)]
 
@@ -73,13 +76,14 @@ def TimerDiff(hTimer):
 
 def playerDisconnect(conn, nick):
 	print(nick, 'disconnected')
+	print(conns)
 	conns.remove(conn)
-	if len(conns):
-		for c in conns:
-			c.send(data2bytes('removePlayer,' + nick))
 	for player in players:
 		if player['nick'] == nick:
 			players.remove(player)
+	for player in players:
+		with locker:
+			updates[player['nick']].append('removePlayer,' + nick)
 
 def playerThread(conn):
 	nick = None
@@ -101,20 +105,23 @@ def playerThread(conn):
 				break
 		nick = data['data']
 		data = {'nick' : data['data'], 'X' : random.randint(1, iMapSize), 'Y' : random.randint(1, iMapSize), 'Direction' : 2, 'eq' : [[0 for x in range(2)] for y in range(9)]}
-		if len(conns):
-			for c in conns:
-				c.send(data2bytes('addPlayer,' + data['nick'] + ',' + str(data['X']) + ',' + str(data['Y']) + ',' + str(data['Direction'])))
+		updates[nick] = []
+		if len(players):
+			for player in players:
+				updates[player['nick']].append('addPlayer,' + data['nick'] + ',' + str(data['X']) + ',' + str(data['Y']) + ',' + str(data['Direction']))
 		conns.append(conn)
 		players.append(data)
 	timer = TimerInit()
 	while True:
-		if TimerDiff(timer) >= 5:
+		'''
+		if TimerDiff(timer) >= 5000:
 			try:
 				conn.send(data2bytes('PING'))
 				timer = TimerInit()
 			except:
 				playerDisconnect(conn, nick)
 				return
+		'''
 		try:
 			data = conn.recv(1024)
 		except:
@@ -123,26 +130,41 @@ def playerThread(conn):
 		if data:
 			data = bytes2data(data)
 			data = data['data'].split(',')
-			try:
-				if data[0] == 'getInit':
-					print(nick, 'requested initial data')
-					data = {'map' : aMap, 'players' : players}
-					conn.send(data2bytes(data))
-				elif data[0] == 'delBlock':
-					aMap[int(data[1])][int(data[2])] == 1
-					for c in conns:
-						c.send(data2bytes('delBlock,' + data[1] + ',' + data[2]))
-				elif data[0] == 'movePlayer':
-					for player in range(len(players)):
-						if players[player]['nick'] == nick:
-							players[player]['X'] == data[1]
-							players[player]['Y'] == data[2]
-							players[player]['Direction'] == data[3]
-					for c in conns:
-						if c != conn: c.send(data2bytes('movePlayer,' + nick + ',' + data[1] + ',' + data[2] + ',' + data[3]))
-			except:
-				playerDisconnect(conn, nick)
-				return
+			#try:
+			if data[0] == 'getUpdates':
+				print(updates)
+				with locker:
+					try:
+						if nick in updates:
+							conn.send(data2bytes(updates[nick]))
+						else:
+							conn.send(data2bytes([]))
+					except:
+						playerDisconnect(conn, nick)
+				updates[nick] = []
+			#elif data[0] == 'disconnect':
+			#	playerDisconnect(conn, nick)
+			elif data[0] == 'getInit':
+				print(nick, 'requested initial data')
+				data = {'map' : aMap, 'players' : players}
+				conn.send(data2bytes(data))
+			elif data[0] == 'delBlock':
+				aMap[int(data[1])][int(data[2])] == 1
+				for player in players:
+					with locker:
+						updates[player['nick']].append('delBlock,' + data[1] + ',' + data[2])
+			elif data[0] == 'movePlayer':
+				for player in range(len(players)):
+					if players[player]['nick'] == nick:
+						players[player]['X'] == data[1]
+						players[player]['Y'] == data[2]
+						players[player]['Direction'] == data[3]
+				for player in players:
+					with locker:
+						updates[player['nick']].append('movePlayer,' + nick + ',' + str(data[1]) + ',' + str(data[2]) + ',' + str(data[3]))
+			#except:
+			#	playerDisconnect(conn, nick)
+			#	return
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 	s.bind((HOST, PORT))
 	s.listen()
