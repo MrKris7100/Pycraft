@@ -15,11 +15,12 @@ MAX_PLAYERS = 4
 players = []
 conns = []
 updates = {}
-iMapSize = 64
+iMapSize = 128
 
 locker = threading.Lock()
 
 aMap = [[0 for x in range(iMapSize)] for y in range(iMapSize)]
+aMapBack = [[0 for x in range(iMapSize)] for y in range(iMapSize)]
 
 def perlin_array(shape, scale=100, octaves = 6,  persistence = 0.5,  lacunarity = 2.0,  seed = None):
 	if not seed:
@@ -34,31 +35,75 @@ def perlin_array(shape, scale=100, octaves = 6,  persistence = 0.5,  lacunarity 
 	norm_me = numpy.vectorize(norm_me)
 	arr = norm_me(arr)
 	return arr
-	
+
+#########################################################
+def BlockAdd(iID, bTrans, bMine, iDigTime):
+	aBlockInfo.append({'ID' : iID, 'Trans' : bTrans, 'bMine' : bMine, 'iDigTime' : iDigTime})
+################### BLOCKS INFO ########################
+aBlockInfo = [] #ID, Trans, Mineable, DigTime
+BlockAdd(0, 0, 0, 0) #Bedrock
+BlockAdd(1, 1, 0 , 0) #Dirt (Background)
+BlockAdd(2, 0, 1, 150) #Dirt (Minable)
+BlockAdd(3, 0, 1, 0) #Water
+BlockAdd(4, 0, 1, 250) #Tree
+BlockAdd(5, 1, 1, 100) #Leaves
+BlockAdd(6, 0, 1, 250) #Log (Tree)
+BlockAdd(7, 1, 1, 0) #Plant (Tree)
+BlockAdd(8, 0, 0, 0) #Water
+BlockAdd(9, 1, 0, 0) #Sand
+BlockAdd(10, 0, 1, 150) #Sand (Mineable)
+BlockAdd(11, 1, 0, 0) #Stone
+BlockAdd(12, 0, 1, 500) #Stone (Mineable)
+BlockAdd(13, 0, 1, 150) #Cactus
+########################################################
+
 ################## MAP GENERATOR ###################
 for iX in range(1, iMapSize - 1):#dirt loop
 	for iY in range(1, iMapSize - 1):
 		aMap[iX][iY] = 1
 #generating terrain
 perlin = perlin_array((iMapSize, iMapSize))
+perlin2 = perlin_array((iMapSize, iMapSize))
 for y in range(1, iMapSize - 1):
 	for x in range(1, iMapSize - 1):
-		if perlin[x][y] >= 0 and perlin[x][y] <= 0.4:
+		if perlin[x][y] >= 0 and perlin[x][y] <= 0.25:
 			aMap[x][y] = 8 #Water
-		elif perlin[x][y] >0.4 and perlin[x][y] <= 0.55:
-			aMap[x][y] = 9 #Sand
-		elif perlin[x][y] > 0.55 and perlin[x][y] <= 0.70:
-			aMap[x][y] = 1
-		elif perlin[x][y] > 0.70 and perlin[x][y] <= 1:
-			aMap[x][y] = 2
+		elif perlin[x][y] >0.25 and perlin[x][y] <= 0.5:
+			if perlin2[x][y] > 0.75:
+				aMap[x][y] = 10 # Mineable sand
+			else:
+				aMap[x][y] = 9 #Sand
+			aMapBack[x][y] = 9
+		elif perlin[x][y] > 0.5 and perlin[x][y] <= 0.75:
+			if perlin2[x][y] > 0.75:
+				aMap[x][y] = 2
+			else:
+				aMap[x][y] = 1
+			aMapBack[x][y] = 1
+		elif perlin[x][y] > 0.75 and perlin[x][y] <= 1:
+			aMap[x][y] = 12 #Stone
+			aMapBack[x][y] = 11
+for y in range(1, iMapSize - 1): #Cactus loop
+	for x in range(1, iMapSize - 1):
+		if aMap[x][y] == 9:
+			if random.randint(1, 20) == 10:
+				aMap[x][y] = 13
 for iSteps in range(int(iMapSize ** 2 / 24)):#tree loop
 	iRandX = random.randint(2, iMapSize - 2)
 	iRandY = random.randint(2, iMapSize - 2)
 	for iX in range(iRandX - 1, iRandX + 2):
 		for iY in range(iRandY - 1, iRandY + 2):
-			if aMap[iX][iY] != 0:
-				aMap[iX][iY] = 5
-	aMap[iRandX][iRandY] = 4
+			if aMap[iX][iY] == 9 or aMap[iX][iY] == 10:
+				iSteps -= 1
+				continue
+	if aMap[iRandX][iRandY] == 1:
+		for iX in range(iRandX - 1, iRandX + 2):
+			for iY in range(iRandY - 1, iRandY + 2):
+				if aMap[iX][iY] != 0:
+					aMap[iX][iY] = 5
+		aMap[iRandX][iRandY] = 4
+	else:
+		iSteps -= 1
 
 def BlockAddEq(nick, iID, pX, pY): #Dodawanie bloku do ekwipunku
 	aEq, iSelector, iCount, sID = -1, -1, 1, iID
@@ -99,7 +144,11 @@ def data2bytes(data):
     return bytes(json.dumps({'data' : data}), encoding='utf8')
     
 def bytes2data(bytes):
-	return json.loads(bytes.decode('utf8'))
+	try:
+		return json.loads(bytes.decode('utf8'))
+	except:
+		print(bytes)
+		return {'data' : ''}
 
 def TimerInit():
 	return int(round(time.time() * 1000))
@@ -172,16 +221,22 @@ def playerThread(conn):
 				data = {'map' : aMap, 'players' : players}
 				conn.send(data2bytes(data))
 			elif data[0] == 'delBlock':
-				BlockAddEq(nick, aMap[int(data[1])][int(data[2])], int(data[1]), int(data[2]))
-				aMap[int(data[1])][int(data[2])] = 1
+				x = int(data[1])
+				y = int(data[2])
+				BlockAddEq(nick, aMap[x][y], x, y)
+				aMap[x][y] = aMapBack[x][y]
 				for player in players:
 					with locker:
-						updates[player['nick']].append('delBlock,' + data[1] + ',' + data[2])
+						updates[player['nick']].append('delBlock,' + data[1] + ',' + data[2] + ',' + str(aMap[x][y]))
 			elif data[0] == 'placeBlock':
+				x = int(data[1])
+				y = int(data[2])
 				for player in players:
 					if player['nick'] == nick:
 						iID = player['eq'][int(data[3])][0]
-				if iID and aMap[int(data[1])][int(data[2])] == 1:
+				if iID and not aBlockInfo[aMap[x][y]]['bMine'] and aBlockInfo[aMap[x][y]]['Trans']:
+					if iID == 13 and aMap[x][y] != 9: return
+					if iID == 7 and aMap[x][y] != 1: return
 					aMap[int(data[1])][int(data[2])] = iID
 					player['eq'][int(data[3])][1] -= 1
 					#if iID == 7: AddTree(pX, pY)

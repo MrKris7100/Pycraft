@@ -54,6 +54,9 @@ BlockAdd(7, 1, 1, 0) #Plant (Tree)
 BlockAdd(8, 0, 0, 0) #Water
 BlockAdd(9, 1, 0, 0) #Sand
 BlockAdd(10, 0, 1, 150) #Sand (Mineable)
+BlockAdd(11, 1, 0, 0) #Stone
+BlockAdd(12, 0, 1, 500) #Stone (Mineable)
+BlockAdd(13, 0, 1, 150) #Cactus
 ########################################################
 ################### BLOCKS TEXTURES LOAD ###############
 txt_id = []
@@ -68,6 +71,9 @@ txt_id.append(pygame.image.load("./Data/Blocks/plant.png")) #Plant (Tree), ID 7
 txt_id.append(pygame.image.load("./Data/Blocks/water.png")) #Water, ID 8
 txt_id.append(pygame.image.load("./Data/Blocks/sand_b.png")) #Sand (background), ID 9
 txt_id.append(pygame.image.load("./Data/Blocks/sand.png")) #Sand (Mineable), ID 10
+txt_id.append(pygame.image.load("./Data/Blocks/stone_b.png")) #Stone (background, ID 11
+txt_id.append(pygame.image.load("./Data/Blocks/stone.png")) #Stone (Mineable), ID 12
+txt_id.append(pygame.image.load("./Data/Blocks/cactus.png")) #Cactus, ID 13
 txt_black = pygame.image.load("./Data/Blocks/black.png")
 txt_m_stage = [0 for x in range(4)]
 txt_m_stage[1] = pygame.image.load("./Data/Blocks/m_stage_1.png") #Mine stage :1
@@ -129,14 +135,19 @@ def TimerDiff(hTimer):
 def BlockPlace(pX, pY, iID = -1): #Stawianie bloków
 	if iID != -1:
 		aMap[pX][pY] = aBlockInfo[iID]['ID']
-	elif ItemBar[itemSelector][1] and aMap[pX][pY] == 1:
-		iID = ItemBar[itemSelector][0]
-		aMap[pX][pY] = aBlockInfo[iID]['ID']
-		ItemBar[itemSelector][1] -= 1
-		if iID == 7:
-			AddTree(pX, pY)
-		if not ItemBar[itemSelector][1]:
-			ItemBar[itemSelector][0] = 0
+	elif ItemBar[itemSelector][1] and not aBlockInfo[aMap[pX][pY]]['bMine'] and aBlockInfo[aMap[pX][pY]]['Trans']:
+		if ItemBar[itemSelector][0] == 13 and aMap[pX][pY] != 9: return
+		if iID == 7 and aMap[x][y] != 1: return
+		if playing == 2:
+			s.send(data2bytes('placeBlock,' + str(pX) + ',' + str(pY) + ',' + str(itemSelector)))
+		else:
+			iID = ItemBar[itemSelector][0]
+			aMap[pX][pY] = iID
+			ItemBar[itemSelector][1] -= 1
+			#if iID == 7: AddTree(pX, pY)
+			if not ItemBar[itemSelector][1]: ItemBar[itemSelector][0] = 0
+	else:
+		return
 			
 def MakePoint(pX, pY, iSize, iID):
 	for iX in range(pX - iSize, pX + iSize + 1):
@@ -155,6 +166,10 @@ def IDToTexture(iID, iX, iY, iW = 48, iH = 48, bEQ = 0): #Zamienia id na HANDLE 
 		window.blit(pygame.transform.scale(txt_id[7], (iW, iH)), (iX, iY))
 	elif iID == 5: #Leaves
 		window.blit(pygame.transform.scale(txt_id[5], (iW, iH)), (iX, iY))
+	elif iID == 13: #Cactus
+		if not bEQ:
+			window.blit(pygame.transform.scale(txt_id[9], (iW, iH)), (iX, iY))
+		window.blit(pygame.transform.scale(txt_id[13], (iW, iH)), (iX, iY))
 	else:
 		window.blit(pygame.transform.scale(txt_id[iID], (iW, iH)), (iX, iY))
 		'''
@@ -337,21 +352,6 @@ def BlockAddEq(iID, pX, pY): #Dodawanie bloku do ekwipunku
 		ItemBar[iSelector][1] += iCount
 		return 1
 	return 0
-
-def BlockPlace(pX, pY, iID = -1): #Stawianie bloków
-	if iID != -1:
-		aMap[pX][pY] = aBlockInfo[iID]['ID']
-	elif ItemBar[itemSelector][1] and aMap[pX][pY] == 1:
-		if playing == 2:
-			s.send(data2bytes('placeBlock,' + str(pX) + ',' + str(pY) + ',' + str(itemSelector)))
-		else:
-			iID = ItemBar[itemSelector][0]
-			aMap[pX][pY] = aBlockInfo[iID]['ID']
-			ItemBar[itemSelector][1] -= 1
-			#if iID == 7: AddTree(pX, pY)
-			if not ItemBar[itemSelector][1]: ItemBar[itemSelector][0] = 0
-	else:
-		return
 	
 def MouseControl():
 	oMouse = MouseToBlock()
@@ -440,7 +440,7 @@ def Client():
 				for update in data['data']:
 					data = update.split(',')
 					if data[0] == 'delBlock':
-						aMap[int(data[1])][int(data[2])] = 1
+						aMap[int(data[1])][int(data[2])] = int(data[3])
 					elif data[0] == 'movePlayer' and data[1] != nick:
 						for player in range(len(players)):
 							players[player]['X'] = int(data[2])
