@@ -99,7 +99,7 @@ def data2bytes(data):
     return bytes(json.dumps({'data' : data}), encoding='utf8')
     
 def bytes2data(bytes):
-    return json.loads(bytes.decode('utf8'))
+	return json.loads(bytes.decode('utf8'))
 
 def TimerInit():
 	return int(round(time.time() * 1000))
@@ -113,6 +113,7 @@ def playerDisconnect(conn, nick):
 	for player in players:
 		if player['nick'] == nick:
 			players.remove(player)
+			print(players)
 	del updates[nick]
 	for player in players:
 		with locker:
@@ -145,18 +146,18 @@ def playerThread(conn):
 		conn.settimeout(5)
 		conns.append(conn)
 		players.append(data)
-	while True:
+		timer = TimerInit()
+	while TimerDiff(timer) < 5000: #5 seconds timeout
 		try:
 			data = conn.recv(1024)
 		except:
-			playerDisconnect(conn, nick)
-			return
-		if data:
+			break
+		if len(data):
+			timer = TimerInit()
 			data = bytes2data(data)
 			data = data['data'].split(',')
 			#try:
 			if data[0] == 'getUpdates':
-				print(updates)
 				with locker:
 					try:
 						if nick in updates:
@@ -164,7 +165,7 @@ def playerThread(conn):
 						else:
 							conn.send(data2bytes([]))
 					except:
-						playerDisconnect(conn, nick)
+						break
 				updates[nick] = []
 			elif data[0] == 'getInit':
 				print(nick, 'requested initial data')
@@ -198,9 +199,7 @@ def playerThread(conn):
 				with locker:
 					for player in players:
 						updates[player['nick']].append('movePlayer,' + nick + ',' + str(data[1]) + ',' + str(data[2]) + ',' + str(data[3]))
-			#except:
-			#	playerDisconnect(conn, nick)
-			#	return
+	playerDisconnect(conn, nick)
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 	s.bind((HOST, PORT))
 	s.listen()

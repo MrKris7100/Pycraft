@@ -52,12 +52,13 @@ BlockAdd(5, 1, 1, 100) #Leaves
 BlockAdd(6, 0, 1, 250) #Log (Tree)
 BlockAdd(7, 1, 1, 0) #Plant (Tree)
 BlockAdd(8, 0, 0, 0) #Water
-BlockAdd(9, 0, 1, 150) #Sand
+BlockAdd(9, 1, 0, 0) #Sand
+BlockAdd(10, 0, 1, 150) #Sand (Mineable)
 ########################################################
 ################### BLOCKS TEXTURES LOAD ###############
 txt_id = []
 txt_id.append(pygame.image.load("./Data/Blocks/bedrock.png")) #Bedrock, ID 0
-txt_id.append(pygame.image.load("./Data/Blocks/dirt_b.png")) #Dirt - podłoga, ID 1
+txt_id.append(pygame.image.load("./Data/Blocks/dirt_b.png")) #Dirt (background), ID 1
 txt_id.append(pygame.image.load("./Data/Blocks/dirt.png")) #Dirt, ID 2
 txt_id.append(pygame.image.load("./Data/Blocks/water.png")) #Woda, ID 3
 txt_id.append(pygame.image.load("./Data/Blocks/tree.png")) #Drzewo, ID 4
@@ -65,7 +66,8 @@ txt_id.append(pygame.image.load("./Data/Blocks/leaves.png")) #Liście, ID 5
 txt_id.append(pygame.image.load("./Data/Blocks/log.png")) #LOG, ID 6
 txt_id.append(pygame.image.load("./Data/Blocks/plant.png")) #Plant (Tree), ID 7
 txt_id.append(pygame.image.load("./Data/Blocks/water.png")) #Water, ID 8
-txt_id.append(pygame.image.load("./Data/Blocks/sand.png")) #Sand, ID 9
+txt_id.append(pygame.image.load("./Data/Blocks/sand_b.png")) #Sand (background), ID 9
+txt_id.append(pygame.image.load("./Data/Blocks/sand.png")) #Sand (Mineable), ID 10
 txt_black = pygame.image.load("./Data/Blocks/black.png")
 txt_m_stage = [0 for x in range(4)]
 txt_m_stage[1] = pygame.image.load("./Data/Blocks/m_stage_1.png") #Mine stage :1
@@ -102,7 +104,6 @@ def data2bytes(data):
     return bytes(json.dumps({'data' : data}), encoding='utf8')
     
 def bytes2data(bytes):
-	print(bytes)
 	return json.loads(bytes.decode('utf8'))
 	
 def perlin_array(shape, scale=100, octaves = 6,  persistence = 0.5,  lacunarity = 2.0,  seed = None):
