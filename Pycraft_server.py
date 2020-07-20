@@ -149,16 +149,16 @@ def playerThread(conn):
 				data = {'map' : aMap, 'players' : players}
 				conn.send(data2bytes(data))
 			elif data[0] == 'delBlock':
-				aMap[int(data[1])][int(data[2])] == 1
+				aMap[int(data[1])][int(data[2])] = 1
 				for player in players:
 					with locker:
 						updates[player['nick']].append('delBlock,' + data[1] + ',' + data[2])
 			elif data[0] == 'movePlayer':
 				for player in range(len(players)):
 					if players[player]['nick'] == nick:
-						players[player]['X'] == data[1]
-						players[player]['Y'] == data[2]
-						players[player]['Direction'] == data[3]
+						players[player]['X'] = data[1]
+						players[player]['Y'] = data[2]
+						players[player]['Direction'] = data[3]
 				for player in players:
 					with locker:
 						updates[player['nick']].append('movePlayer,' + nick + ',' + str(data[1]) + ',' + str(data[2]) + ',' + str(data[3]))
