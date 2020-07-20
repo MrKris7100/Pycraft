@@ -40,7 +40,6 @@ for iX in range(1, iMapSize - 1):#dirt loop
 	for iY in range(1, iMapSize - 1):
 		aMap[iX][iY] = 1
 #generating terrain
-'''
 perlin = perlin_array((iMapSize, iMapSize))
 for y in range(1, iMapSize - 1):
 	for x in range(1, iMapSize - 1):
@@ -52,7 +51,6 @@ for y in range(1, iMapSize - 1):
 			aMap[x][y] = 1
 		elif perlin[x][y] > 0.70 and perlin[x][y] <= 1:
 			aMap[x][y] = 2
-'''
 for iSteps in range(int(iMapSize ** 2 / 24)):#tree loop
 	iRandX = random.randint(2, iMapSize - 2)
 	iRandY = random.randint(2, iMapSize - 2)
@@ -61,6 +59,41 @@ for iSteps in range(int(iMapSize ** 2 / 24)):#tree loop
 			if aMap[iX][iY] != 0:
 				aMap[iX][iY] = 5
 	aMap[iRandX][iRandY] = 4
+
+def BlockAddEq(nick, iID, pX, pY): #Dodawanie bloku do ekwipunku
+	aEq, iSelector, iCount, sID = -1, -1, 1, iID
+	for player in players:
+		if player['nick'] == nick:
+			aEq = player['eq']
+	if aEq == -1: return
+	#Pre switch dla ID
+	if iID == 4: #Tree > Log
+		sID = 6
+		iCount = random.randint(1, 3)
+	elif iID == 5: #Leaves > Plants
+		sID = 7
+		iCount = random.randint(0, 1)
+	elif iID == 7:
+		sId = 7
+		iCount = 1
+		#TreeDelete(pX, pY)
+	if iCount == 0: return
+	for iC in range(0, 8):
+		if aEq[iC][0] == sID:
+			iSelector = iC
+			break
+	if iSelector == -1:
+		for iC in range(0, 8):
+			if aEq[iC][0] == 0:
+				iSelector = iC
+				break
+	if iSelector != -1:
+		with locker:
+			updates[nick].append('eqAdd,' + str(iSelector) + ',' + str(sID) + ',' + str(iCount))
+		for player in range(len(players)):
+			if players[player]['nick'] == nick:
+				players[player]['eq'][iSelector][0] = sID
+				players[player]['eq'][iSelector][1] += iCount
 
 def data2bytes(data):
     return bytes(json.dumps({'data' : data}), encoding='utf8')
@@ -76,11 +109,11 @@ def TimerDiff(hTimer):
 
 def playerDisconnect(conn, nick):
 	print(nick, 'disconnected')
-	print(conns)
 	conns.remove(conn)
 	for player in players:
 		if player['nick'] == nick:
 			players.remove(player)
+	del updates[nick]
 	for player in players:
 		with locker:
 			updates[player['nick']].append('removePlayer,' + nick)
@@ -109,19 +142,10 @@ def playerThread(conn):
 		if len(players):
 			for player in players:
 				updates[player['nick']].append('addPlayer,' + data['nick'] + ',' + str(data['X']) + ',' + str(data['Y']) + ',' + str(data['Direction']))
+		conn.settimeout(5)
 		conns.append(conn)
 		players.append(data)
-	timer = TimerInit()
 	while True:
-		'''
-		if TimerDiff(timer) >= 5000:
-			try:
-				conn.send(data2bytes('PING'))
-				timer = TimerInit()
-			except:
-				playerDisconnect(conn, nick)
-				return
-		'''
 		try:
 			data = conn.recv(1024)
 		except:
@@ -142,25 +166,37 @@ def playerThread(conn):
 					except:
 						playerDisconnect(conn, nick)
 				updates[nick] = []
-			#elif data[0] == 'disconnect':
-			#	playerDisconnect(conn, nick)
 			elif data[0] == 'getInit':
 				print(nick, 'requested initial data')
 				data = {'map' : aMap, 'players' : players}
 				conn.send(data2bytes(data))
 			elif data[0] == 'delBlock':
+				BlockAddEq(nick, aMap[int(data[1])][int(data[2])], int(data[1]), int(data[2]))
 				aMap[int(data[1])][int(data[2])] = 1
 				for player in players:
 					with locker:
 						updates[player['nick']].append('delBlock,' + data[1] + ',' + data[2])
+			elif data[0] == 'placeBlock':
+				for player in players:
+					if player['nick'] == nick:
+						iID = player['eq'][int(data[3])][0]
+				if iID and aMap[int(data[1])][int(data[2])] == 1:
+					aMap[int(data[1])][int(data[2])] = iID
+					player['eq'][int(data[3])][1] -= 1
+					#if iID == 7: AddTree(pX, pY)
+					if not player['eq'][int(data[3])][1]: player['eq'][int(data[3])][0] = 0
+					with locker:
+						updates[nick].append('eqRemove,' + str(data[3]))
+						for player in players:
+							updates[player['nick']].append('placeBlock,' + data[1] + ',' + data[2] + ',' + str(iID))
 			elif data[0] == 'movePlayer':
 				for player in range(len(players)):
 					if players[player]['nick'] == nick:
 						players[player]['X'] = data[1]
 						players[player]['Y'] = data[2]
 						players[player]['Direction'] = data[3]
-				for player in players:
-					with locker:
+				with locker:
+					for player in players:
 						updates[player['nick']].append('movePlayer,' + nick + ',' + str(data[1]) + ',' + str(data[2]) + ',' + str(data[3]))
 			#except:
 			#	playerDisconnect(conn, nick)

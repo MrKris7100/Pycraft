@@ -3,7 +3,7 @@ import time
 import random
 import math
 import numpy
-#from noise import pnoise2
+from noise import pnoise2
 import socket
 import json
 import pygame_menu
@@ -298,13 +298,15 @@ def BlockDig(pX, pY): #Kopanie bloków
 			else:
 				if not iDeveloper: oDig['Dig'] = -1
 		if oDig['Dig'] == 4:
-			if BlockAddEq(aMap[pX][pY], pX, pY): #Dodawanie do eq
-				oDig['Dig'] = -1
-				if playing == 2:
-					with locker:
-						s.send(data2bytes('delBlock,' + str(pX) + ',' + str(pY)))
-				else:
-					aMap[pX][pY] = 1
+			oDig['Dig'] = -1
+			if playing == 2:
+				with locker:
+					s.send(data2bytes('delBlock,' + str(pX) + ',' + str(pY)))
+			else:
+				BlockAddEq(aMap[pX][pY], pX, pY) #Dodawanie do eq
+				aMap[pX][pY] = 1
+	elif oDig['Dig'] != -1:
+		oDig['Dig'] = -1
 
 def BlockAddEq(iID, pX, pY): #Dodawanie bloku do ekwipunku
 	iSelector, iCount, sID = -1, 1, iID
@@ -339,11 +341,14 @@ def BlockPlace(pX, pY, iID = -1): #Stawianie bloków
 	if iID != -1:
 		aMap[pX][pY] = aBlockInfo[iID]['ID']
 	elif ItemBar[itemSelector][1] and aMap[pX][pY] == 1:
-		iID = ItemBar[itemSelector][0]
-		aMap[pX][pY] = aBlockInfo[iID]['ID']
-		ItemBar[itemSelector][1] -= 1
-		#if iID == 7: AddTree(pX, pY)
-		if not ItemBar[itemSelector][1]: ItemBar[itemSelector][0] = 0
+		if playing == 2:
+			s.send(data2bytes('placeBlock,' + str(pX) + ',' + str(pY) + ',' + str(itemSelector)))
+		else:
+			iID = ItemBar[itemSelector][0]
+			aMap[pX][pY] = aBlockInfo[iID]['ID']
+			ItemBar[itemSelector][1] -= 1
+			#if iID == 7: AddTree(pX, pY)
+			if not ItemBar[itemSelector][1]: ItemBar[itemSelector][0] = 0
 	else:
 		return
 	
@@ -446,6 +451,14 @@ def Client():
 						for player in players:
 							if player['nick'] == data[1]:
 								players.remove(player)
+					elif data[0] == 'placeBlock':
+						BlockPlace(int(data[1]), int(data[2]), int(data[3]))
+					elif data[0] == 'eqRemove':
+						ItemBar[int(data[1])][1] -= 1
+						if not ItemBar[int(data[1])][1]: ItemBar[int(data[1])][0] = 0
+					elif data[0] == 'eqAdd':
+						ItemBar[int(data[1])][0] = int(data[2])
+						ItemBar[int(data[1])][1] += int(data[3])
 				break
 
 def start_game_multi():
@@ -538,8 +551,10 @@ def save_game():
 
 def disconnect():
 	global playing, s
-	s.send(data2bytes('disconnect'))
-	s.close()
+	try:
+		s.close()
+	except:
+		pass
 	playing = False
 	switch_menu(0)
 	pause()
