@@ -339,7 +339,7 @@ def BlockDig(pX, pY): #Kopanie bloków
 		oDig['Dig'] = -1
 
 def BlockAddEq(iID, pX, pY): #Dodawanie bloku do ekwipunku
-	iSelector, iCount, sID = -1, 1, iID
+	iSelector, iCount, sID = [-1, -1], 1, iID
 	#Pre switch dla ID
 	if iID == 4: #Tree > Log
 		sID = 6
@@ -353,17 +353,27 @@ def BlockAddEq(iID, pX, pY): #Dodawanie bloku do ekwipunku
 		#TreeDelete(pX, pY)
 	if iCount == 0: return 1
 	for iC in range(0, 8):
-		if ItemBar[iC][0] == sID:
-			iSelector = iC
+		if ItemBar[iC][3][0] == sID:
+			iSelector = [iC, 3]
 			break
+	for iC2 in range(3):
+		for iC in range(9):
+			if ItemBar[iC][iC2][0] == sID:
+				iSelector = [iC, iC2]
 	if iSelector == -1:
 		for iC in range(0, 8):
-			if ItemBar[iC][0] == 0:
-				iSelector = iC
+			if ItemBar[iC][3][0] == 0:
+				iSelector = [iC, 3]
 				break
-	if iSelector != -1:
-		ItemBar[iSelector][0] = sID
-		ItemBar[iSelector][1] += iCount
+	if iSelector == -1:
+		for iC2 in range(3):
+			for iC in range(9):
+				if ItemBar[iC][iC2][0] == 0:
+					iSelector = [iC, iC2]
+					break
+	if iSelector[0] != -1 and iSelector[1] != -1:
+		ItemBar[iSelector[0]][iSelector[1]][0] = sID
+		ItemBar[iSelector[0]][iSelector[1]][1] += iCount
 		return 1
 	return 0
 	
@@ -388,9 +398,9 @@ def DrawItembar():
 	window.blit(txt_itembar, (0 + xOffset, height - 96))
 	window.blit(txt_itemselector, (itemSelector * 43 + itemSelector - 1 + xOffset, height - 96))
 	for iC in range(0, 8):
-		if ItemBar[iC][0] > 1:
-			IDToTexture(ItemBar[iC][0], 12 + (iC * 43 + iC) - 1 + xOffset, height - 84, 24, 24, 1)
-			DrawString(ItemBar[iC][1], 12 + (iC * 43 + iC) - 1 + xOffset, height - 64, 12)
+		if ItemBar[iC][3][0] > 1:
+			IDToTexture(ItemBar[iC][3][0], 12 + (iC * 43 + iC) - 1 + xOffset, height - 84, 24, 24, 1)
+			DrawString(ItemBar[iC][3][1], 12 + (iC * 43 + iC) - 1 + xOffset, height - 64, 12)
 #Main game loop
 
 key = None
@@ -495,11 +505,11 @@ def Client():
 					elif data[0] == 'placeBlock':
 						BlockPlace(int(data[1]), int(data[2]), int(data[3]))
 					elif data[0] == 'eqRemove':
-						ItemBar[int(data[1])][1] -= 1
-						if not ItemBar[int(data[1])][1]: ItemBar[int(data[1])][0] = 0
+						ItemBar[int(data[1])][int(data[2])][1] -= 1
+						if not ItemBar[int(data[1])][int(data[2])][1]: ItemBar[int(data[1])][int(data[2])][0] = 0
 					elif data[0] == 'eqAdd':
-						ItemBar[int(data[1])][0] = int(data[2])
-						ItemBar[int(data[1])][1] += int(data[3])
+						ItemBar[int(data[1])][int(data[2])][0] = int(data[2])
+						ItemBar[int(data[1])][int(data[2])][1] += int(data[3])
 				break
 
 def start_game_multi():
@@ -568,7 +578,7 @@ def create_world():
 	if not name:
 		name = 'world' + str(random.randint(0, 9999))
 	generate_map(size)
-	world = {'map' : aMap, 'mapBack' : aMapBack, 'eq' : [[0 for x in range(2)] for y in range(9)], 'player' : {'X' : random.randint(1, size - 1), 'Y' : random.randint(1, size - 1), 'Direction' : 2}}
+	world = {'map' : aMap, 'mapBack' : aMapBack, 'eq' : [[[0 for e in range(2)] for x in range(4)] for y in range(9)], 'player' : {'X' : random.randint(1, size - 1), 'Y' : random.randint(1, size - 1), 'Direction' : 2}}
 	if os.path.isfile('./worlds/' + name):
 		count = 1
 		while os.path.isfile('./worlds/' + name + str(count)):
