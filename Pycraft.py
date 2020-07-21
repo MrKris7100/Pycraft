@@ -61,42 +61,43 @@ BlockAdd(13, 0, 1, 150) #Cactus
 ########################################################
 ################### BLOCKS TEXTURES LOAD ###############
 txt_id = []
-txt_id.append(pygame.image.load("./Data/Blocks/bedrock.png")) #Bedrock, ID 0
-txt_id.append(pygame.image.load("./Data/Blocks/dirt_b.png")) #Dirt (background), ID 1
-txt_id.append(pygame.image.load("./Data/Blocks/dirt.png")) #Dirt, ID 2
-txt_id.append(pygame.image.load("./Data/Blocks/water.png")) #Woda, ID 3
-txt_id.append(pygame.image.load("./Data/Blocks/tree.png")) #Drzewo, ID 4
-txt_id.append(pygame.image.load("./Data/Blocks/leaves.png")) #Liście, ID 5
-txt_id.append(pygame.image.load("./Data/Blocks/log.png")) #LOG, ID 6
-txt_id.append(pygame.image.load("./Data/Blocks/plant.png")) #Plant (Tree), ID 7
-txt_id.append(pygame.image.load("./Data/Blocks/water.png")) #Water, ID 8
-txt_id.append(pygame.image.load("./Data/Blocks/sand_b.png")) #Sand (background), ID 9
-txt_id.append(pygame.image.load("./Data/Blocks/sand.png")) #Sand (Mineable), ID 10
-txt_id.append(pygame.image.load("./Data/Blocks/stone_b.png")) #Stone (background, ID 11
-txt_id.append(pygame.image.load("./Data/Blocks/stone.png")) #Stone (Mineable), ID 12
-txt_id.append(pygame.image.load("./Data/Blocks/cactus.png")) #Cactus, ID 13
-txt_black = pygame.image.load("./Data/Blocks/black.png")
+txt_id.append(pygame.image.load("./Assets/Blocks/bedrock.png")) #Bedrock, ID 0
+txt_id.append(pygame.image.load("./Assets/Blocks/dirt_b.png")) #Dirt (background), ID 1
+txt_id.append(pygame.image.load("./Assets/Blocks/dirt.png")) #Dirt, ID 2
+txt_id.append(pygame.image.load("./Assets/Blocks/water.png")) #Woda, ID 3
+txt_id.append(pygame.image.load("./Assets/Blocks/tree.png")) #Drzewo, ID 4
+txt_id.append(pygame.image.load("./Assets/Blocks/leaves.png")) #Liście, ID 5
+txt_id.append(pygame.image.load("./Assets/Blocks/log.png")) #LOG, ID 6
+txt_id.append(pygame.image.load("./Assets/Blocks/plant.png")) #Plant (Tree), ID 7
+txt_id.append(pygame.image.load("./Assets/Blocks/water.png")) #Water, ID 8
+txt_id.append(pygame.image.load("./Assets/Blocks/sand_b.png")) #Sand (background), ID 9
+txt_id.append(pygame.image.load("./Assets/Blocks/sand.png")) #Sand (Mineable), ID 10
+txt_id.append(pygame.image.load("./Assets/Blocks/stone_b.png")) #Stone (background, ID 11
+txt_id.append(pygame.image.load("./Assets/Blocks/stone.png")) #Stone (Mineable), ID 12
+txt_id.append(pygame.image.load("./Assets/Blocks/cactus.png")) #Cactus, ID 13
+txt_black = pygame.image.load("./Assets/Blocks/black.png")
 txt_m_stage = [0 for x in range(4)]
-txt_m_stage[1] = pygame.image.load("./Data/Blocks/m_stage_1.png") #Mine stage :1
-txt_m_stage[2] = pygame.image.load("./Data/Blocks/m_stage_2.png") #Mine stage :2
-txt_m_stage[3] = pygame.image.load("./Data/Blocks/m_stage_3.png") #Mine stage :3
-txt_itembar = pygame.image.load("./Data/Blocks/itembar.png") #Itembar
-txt_itemselector = pygame.image.load("./Data/Blocks/itemselector.png") #ItemSelector
+txt_m_stage[1] = pygame.image.load("./Assets/Blocks/m_stage_1.png") #Mine stage :1
+txt_m_stage[2] = pygame.image.load("./Assets/Blocks/m_stage_2.png") #Mine stage :2
+txt_m_stage[3] = pygame.image.load("./Assets/Blocks/m_stage_3.png") #Mine stage :3
+txt_itembar = pygame.image.load("./Assets/UI/itembar.png") #Itembar
+txt_itemselector = pygame.image.load("./Assets/UI/itemselector.png") #ItemSelector
+txt_inventory = pygame.image.load("./Assets/UI/inventory.png") #ItemSelector
 ########################################################
 ################## PLAYER TEXTURES #####################
 txt_player = [0 for x in range(4)]
-txt_player[0] = pygame.image.load("./Data/Player/up.png")
-txt_player[1] = pygame.image.load("./Data/Player/right.png")
-txt_player[2] = pygame.image.load("./Data/Player/down.png")
-txt_player[3] = pygame.image.load("./Data/Player/left.png")
+txt_player[0] = pygame.image.load("./Assets/Player/up.png")
+txt_player[1] = pygame.image.load("./Assets/Player/right.png")
+txt_player[2] = pygame.image.load("./Assets/Player/down.png")
+txt_player[3] = pygame.image.load("./Assets/Player/left.png")
 ########################################################
 ################### LIGHT TEXTURES LOAD ################
 txt_light = [0 for x in range(6)]
-txt_light[0] = pygame.image.load("./Data/Light/0.png")# 0%
-txt_light[2] = pygame.image.load("./Data/Light/20.png")# 20%
-txt_light[3] = pygame.image.load("./Data/Light/30.png")# 30%
-txt_light[4] = pygame.image.load("./Data/Light/40.png")# 40%
-txt_light[5] = pygame.image.load("./Data/Light/50.png")# 50%
+txt_light[0] = pygame.image.load("./Assets/Light/0.png")# 0%
+txt_light[2] = pygame.image.load("./Assets/Light/20.png")# 20%
+txt_light[3] = pygame.image.load("./Assets/Light/30.png")# 30%
+txt_light[4] = pygame.image.load("./Assets/Light/40.png")# 40%
+txt_light[5] = pygame.image.load("./Assets/Light/50.png")# 50%
 ########################################################
 ################### FONTS LOAD #########################
 #Font_red = _FontCreate(@ScriptDir & "Data/Font/", 0, -100, -100)
@@ -195,7 +196,10 @@ def IDToTexture(iID, iX, iY, iW = 48, iH = 48, bEQ = 0): #Zamienia id na HANDLE 
 		Case 5
 			_DirectDraw($txt_leaves, $iX, $iY)
 		'''
-		
+
+def DrawInventory():#Funkcja rysowania ekwipunku
+	window.blit(txt_inventory, (math.floor((width - 397) / 2), math.floor((height - 203) / 2)))
+
 def DrawMap():#Funkcja rysowania mapy
 	'''
 	if b_Map == 0: #Ziemia
@@ -236,7 +240,6 @@ def DrawMap():#Funkcja rysowania mapy
 		window.blit(txt_m_stage[oDig['Dig']],
 		((oDig['X'] - oPlayer['X'] + blocks[0]) * 48,
 		(oDig['Y'] - oPlayer['Y'] + blocks[1]) * 48))
-	DrawItembar()
 
 def MapOffset(oX = 0, oY = 0):
 	if aMap[oPlayer['X'] + oX][oPlayer['Y'] + oY] == 0: return 0
@@ -381,19 +384,20 @@ def DrawString(text, x, y, size = 50, color = (255, 255, 255)):
 	window.blit(text, (x, y))
 			
 def DrawItembar():
-	window.blit(txt_itembar, (0, height - 48))
-	window.blit(txt_itemselector, (itemSelector * 43 + itemSelector - 1, height - 48))
+	xOffset = math.floor((width - 397) / 2)
+	window.blit(txt_itembar, (0 + xOffset, height - 96))
+	window.blit(txt_itemselector, (itemSelector * 43 + itemSelector - 1 + xOffset, height - 96))
 	for iC in range(0, 8):
 		if ItemBar[iC][0] > 1:
-			IDToTexture(ItemBar[iC][0], 12 + (iC * 43 + iC) - 1, height - 36, 24, 24, 1)
-			#_DirectDraw($txt_id_2, 12 + ($iC * 43 + $iC) - 1, 528 - 36, 24, 24)
-			DrawString(ItemBar[iC][1], 12 + (iC * 43 + iC) - 1, height - 16, 12)
+			IDToTexture(ItemBar[iC][0], 12 + (iC * 43 + iC) - 1 + xOffset, height - 84, 24, 24, 1)
+			DrawString(ItemBar[iC][1], 12 + (iC * 43 + iC) - 1 + xOffset, height - 64, 12)
 #Main game loop
 
 key = None
 active_menu = 0
 playing = False
 paused = False
+inventory = False
 
 def switch_menu(menu):
 	global active_menu
@@ -453,7 +457,7 @@ def generate_map(iMapSize):
 def start_game():
 	name = world_selector.get_value()
 	if name[1] == -1: return
-	global playing, aMap, ItemBar, oPlayer, iMapSize
+	global playing, aMap, ItemBar, oPlayer, iMapSize, aMapBack
 	file = open('./worlds/' + name[0], 'r')
 	data = json.loads(file.read())
 	aMap = data['map']
@@ -657,17 +661,21 @@ while True:
 				else:
 					active_menu = 3
 				pause()
+			elif event.key == pygame.K_e:
+				inventory = not inventory
 			else:
 				key = event.key
 			
 	window.fill((0, 0, 0))
 	
 	if playing and not paused:
-		
-		PlayerMove(key)
-		MouseControl()
-	
 		DrawMap()
+		if not inventory:
+			DrawItembar()
+			PlayerMove(key)
+			MouseControl()
+		else:
+			DrawInventory()
 	elif active_menu == -1:
 		break
 	else:
