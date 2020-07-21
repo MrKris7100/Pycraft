@@ -144,11 +144,14 @@ def data2bytes(data):
     return bytes(json.dumps({'data' : data}), encoding='utf8')
     
 def bytes2data(bytes):
-	try:
-		return json.loads(bytes.decode('utf8'))
-	except:
-		print(bytes)
-		return {'data' : ''}
+	datas = []
+	string = bytes.decode('utf8')
+	frames = string.split('}{')
+	for frame in frames:
+		if frame[:1] != '{': frame = '{' + frame
+		if frame[-1] != '}': frame += '}'
+		datas.append(json.loads(frame))
+	return datas
 
 def TimerInit():
 	return int(round(time.time() * 1000))
@@ -177,7 +180,7 @@ def playerThread(conn):
 		while True:
 			data = conn.recv(1024)
 			if data:
-				data = bytes2data(data)
+				data = bytes2data(data)[0]
 				print('Logging in as', data['data'])
 				for player in players:
 					if player['nick'] == data['data']:
@@ -203,57 +206,59 @@ def playerThread(conn):
 			break
 		if len(data):
 			timer = TimerInit()
-			data = bytes2data(data)
-			data = data['data'].split(',')
-			#try:
-			if data[0] == 'getUpdates':
-				with locker:
-					try:
-						if nick in updates:
-							conn.send(data2bytes(updates[nick]))
-						else:
-							conn.send(data2bytes([]))
-					except:
-						break
-				updates[nick] = []
-			elif data[0] == 'getInit':
-				print(nick, 'requested initial data')
-				data = {'map' : aMap, 'players' : players}
-				conn.send(data2bytes(data))
-			elif data[0] == 'delBlock':
-				x = int(data[1])
-				y = int(data[2])
-				BlockAddEq(nick, aMap[x][y], x, y)
-				aMap[x][y] = aMapBack[x][y]
-				for player in players:
+			datas = bytes2data(data)
+			for data in datas:
+				print(data)
+				data = data['data'].split(',')
+				#try:
+				if data[0] == 'getUpdates':
 					with locker:
-						updates[player['nick']].append('delBlock,' + data[1] + ',' + data[2] + ',' + str(aMap[x][y]))
-			elif data[0] == 'placeBlock':
-				x = int(data[1])
-				y = int(data[2])
-				for player in players:
-					if player['nick'] == nick:
-						iID = player['eq'][int(data[3])][0]
-				if iID and not aBlockInfo[aMap[x][y]]['bMine'] and aBlockInfo[aMap[x][y]]['Trans']:
-					if iID == 13 and aMap[x][y] != 9: return
-					if iID == 7 and aMap[x][y] != 1: return
-					aMap[int(data[1])][int(data[2])] = iID
-					player['eq'][int(data[3])][1] -= 1
-					#if iID == 7: AddTree(pX, pY)
-					if not player['eq'][int(data[3])][1]: player['eq'][int(data[3])][0] = 0
-					with locker:
-						updates[nick].append('eqRemove,' + str(data[3]))
-						for player in players:
-							updates[player['nick']].append('placeBlock,' + data[1] + ',' + data[2] + ',' + str(iID))
-			elif data[0] == 'movePlayer':
-				for player in range(len(players)):
-					if players[player]['nick'] == nick:
-						players[player]['X'] = data[1]
-						players[player]['Y'] = data[2]
-						players[player]['Direction'] = data[3]
-				with locker:
+						try:
+							if nick in updates:
+								conn.send(data2bytes(updates[nick]))
+							else:
+								conn.send(data2bytes([]))
+						except:
+							break
+					updates[nick] = []
+				elif data[0] == 'getInit':
+					print(nick, 'requested initial data')
+					data = {'map' : aMap, 'players' : players}
+					conn.send(data2bytes(data))
+				elif data[0] == 'delBlock':
+					x = int(data[1])
+					y = int(data[2])
+					BlockAddEq(nick, aMap[x][y], x, y)
+					aMap[x][y] = aMapBack[x][y]
 					for player in players:
-						updates[player['nick']].append('movePlayer,' + nick + ',' + str(data[1]) + ',' + str(data[2]) + ',' + str(data[3]))
+						with locker:
+							updates[player['nick']].append('delBlock,' + data[1] + ',' + data[2] + ',' + str(aMap[x][y]))
+				elif data[0] == 'placeBlock':
+					x = int(data[1])
+					y = int(data[2])
+					for player in players:
+						if player['nick'] == nick:
+							iID = player['eq'][int(data[3])][0]
+					if iID and not aBlockInfo[aMap[x][y]]['bMine'] and aBlockInfo[aMap[x][y]]['Trans']:
+						if iID == 13 and aMap[x][y] != 9: return
+						if iID == 7 and aMap[x][y] != 1: return
+						aMap[int(data[1])][int(data[2])] = iID
+						player['eq'][int(data[3])][1] -= 1
+						#if iID == 7: AddTree(pX, pY)
+						if not player['eq'][int(data[3])][1]: player['eq'][int(data[3])][0] = 0
+						with locker:
+							updates[nick].append('eqRemove,' + str(data[3]))
+							for player in players:
+								updates[player['nick']].append('placeBlock,' + data[1] + ',' + data[2] + ',' + str(iID))
+				elif data[0] == 'movePlayer':
+					for player in range(len(players)):
+						if players[player]['nick'] == nick:
+							players[player]['X'] = data[1]
+							players[player]['Y'] = data[2]
+							players[player]['Direction'] = data[3]
+					with locker:
+						for player in players:
+							updates[player['nick']].append('movePlayer,' + nick + ',' + str(data[1]) + ',' + str(data[2]) + ',' + str(data[3]))
 	playerDisconnect(conn, nick)
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 	s.bind((HOST, PORT))

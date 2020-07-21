@@ -107,7 +107,7 @@ light_c, light_v, light_val = 0, 0, 0
 #AdlibRegister("light", 10000) ;10s
 
 def recvall(sock):
-	BUFF_SIZE = 8 # 4 KiB
+	BUFF_SIZE = 4 # 4 KiB
 	data = b''
 	while True:
 		part = sock.recv(BUFF_SIZE)
