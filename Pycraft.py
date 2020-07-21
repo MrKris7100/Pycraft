@@ -106,6 +106,15 @@ txt_light[5] = pygame.image.load("./Data/Light/50.png")# 50%
 light_c, light_v, light_val = 0, 0, 0
 #AdlibRegister("light", 10000) ;10s
 
+def recvall(sock, n):
+    data = bytearray()
+    while len(data) < n:
+        packet = sock.recv(n - len(data))
+        if not packet:
+            return None
+        data.extend(packet)
+    return data
+
 def data2bytes(data):
     return bytes(json.dumps({'data' : data}), encoding='utf8')
     
@@ -481,7 +490,7 @@ def start_game_multi():
 							print('Logged in')
 							s.send(data2bytes('getInit'))
 							while True:
-								data = s.recv(1024 ** 2 * 3)
+								data = recvall(s, 1024 ** 2 * 3)
 								if data:
 									print('Map received')
 									data = bytes2data(data)
