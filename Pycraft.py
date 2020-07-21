@@ -17,6 +17,7 @@ blocks = [math.floor(math.floor(width / 48) / 2), math.floor(math.floor(height /
 nick = 'Player' + str(random.randint(1, 9))
 
 aMap = []
+aMapBack = []
 
 clock = pygame.time.Clock()
 
@@ -330,7 +331,7 @@ def BlockDig(pX, pY): #Kopanie bloków
 					s.send(data2bytes('delBlock,' + str(pX) + ',' + str(pY)))
 			else:
 				BlockAddEq(aMap[pX][pY], pX, pY) #Dodawanie do eq
-				aMap[pX][pY] = 1
+				aMap[pX][pY] = aMapBack[pX][pY]
 	elif oDig['Dig'] != -1:
 		oDig['Dig'] = -1
 
@@ -399,31 +400,55 @@ def switch_menu(menu):
 	active_menu = menu
 
 def generate_map(iMapSize):
-	global aMap
+	global aMap, aMapBack
 	aMap = [[0 for x in range(iMapSize)] for y in range(iMapSize)]
+	aMapBack = [[0 for x in range(iMapSize)] for y in range(iMapSize)]
 	for iX in range(1, iMapSize - 1):#dirt loop
 		for iY in range(1, iMapSize - 1):
-			#gen_progress.set_title('Generating world: %.2f' % (((iX + 1) * iMapSize + iY + 1) / (iMapSize ** 2 - 1) * 100))
-			BlockPlace(iX, iY, 1)
-	#generating terrain
-	'''
-	perlin = perlin_array((iMapSize, iMapSize))
-	for y in range(1, iMapSize - 1):
-		for x in range(1, iMapSize - 1):
-			if perlin[x][y] >= 0 and perlin[x][y] <= 0.4:
-				aMap[x][y] = 8 #Water
-			elif perlin[x][y] >0.4 and perlin[x][y] <= 0.55:
-				aMap[x][y] = 9 #Sand
-			elif perlin[x][y] > 0.55 and perlin[x][y] <= 0.70:
-				aMap[x][y] = 1
-			elif perlin[x][y] > 0.70 and perlin[x][y] <= 1:
-				aMap[x][y] = 2
-	'''
-	#generating trees
-	for iSteps in range(int(iMapSize ** 2 / 24)):
-		iRandX = random.randint(2, iMapSize - 2)
-		iRandY = random.randint(2, iMapSize - 2)
-		PlantTree(iRandX, iRandY)
+			aMap[iX][iY] = 1
+		#generating terrain
+		perlin = perlin_array((iMapSize, iMapSize))
+		perlin2 = perlin_array((iMapSize, iMapSize))
+		for y in range(1, iMapSize - 1):
+			for x in range(1, iMapSize - 1):
+				if perlin[x][y] >= 0 and perlin[x][y] <= 0.25:
+					aMap[x][y] = 8 #Water
+				elif perlin[x][y] >0.25 and perlin[x][y] <= 0.5:
+					if perlin2[x][y] > 0.75:
+						aMap[x][y] = 10 # Mineable sand
+					else:
+						aMap[x][y] = 9 #Sand
+					aMapBack[x][y] = 9
+				elif perlin[x][y] > 0.5 and perlin[x][y] <= 0.75:
+					if perlin2[x][y] > 0.75:
+						aMap[x][y] = 2
+					else:
+						aMap[x][y] = 1
+					aMapBack[x][y] = 2
+				elif perlin[x][y] > 0.75 and perlin[x][y] <= 1:
+					aMap[x][y] = 12 #Stone
+					aMapBack[x][y] = 11
+		for y in range(1, iMapSize - 1): #Cactus loop
+			for x in range(1, iMapSize - 1):
+				if aMap[x][y] == 9:
+					if random.randint(1, 20) == 10:
+						aMap[x][y] = 13
+		for iSteps in range(int(iMapSize ** 2 / 24)):#tree loop
+			iRandX = random.randint(2, iMapSize - 2)
+			iRandY = random.randint(2, iMapSize - 2)
+			for iX in range(iRandX - 1, iRandX + 2):
+				for iY in range(iRandY - 1, iRandY + 2):
+					if aMap[iX][iY] == 9 or aMap[iX][iY] == 10:
+						iSteps -= 1
+						continue
+			if aMap[iRandX][iRandY] == 1:
+				for iX in range(iRandX - 1, iRandX + 2):
+					for iY in range(iRandY - 1, iRandY + 2):
+						if aMap[iX][iY] != 0:
+							aMap[iX][iY] = 5
+				aMap[iRandX][iRandY] = 4
+			else:
+				iSteps -= 1
 
 def start_game():
 	name = world_selector.get_value()
@@ -432,6 +457,7 @@ def start_game():
 	file = open('./worlds/' + name[0], 'r')
 	data = json.loads(file.read())
 	aMap = data['map']
+	aMapBack = data['mapBack']
 	iMapSize = len(aMap[0])
 	ItemBar = data['eq']
 	oPlayer = data['player']
@@ -524,7 +550,7 @@ def worlds_list():
 		for item in os.listdir('./worlds/'):
 			if os.path.isfile('./worlds/' + item):
 				worlds.append((item, ))
-	return worlds
+	return worlds if len(worlds) else [('No worlds', -1)]
 
 def pause():
 	global paused
@@ -533,12 +559,12 @@ def pause():
 def create_world():
 	size = int(world_size.get_value()[0])
 	name = world_name.get_value()
-	global aMap, active_menu
+	global aMap, active_menu, aMapBack
 	if not os.path.isdir('./worlds'): os.mkdir("./worlds")
 	if not name:
 		name = 'world' + str(random.randint(0, 9999))
 	generate_map(size)
-	world = {'map' : aMap, 'eq' : [[0 for x in range(2)] for y in range(9)], 'player' : {'X' : random.randint(1, size - 1), 'Y' : random.randint(1, size - 1), 'Direction' : 2}}
+	world = {'map' : aMap, 'mapBack' : aMapBack, 'eq' : [[0 for x in range(2)] for y in range(9)], 'player' : {'X' : random.randint(1, size - 1), 'Y' : random.randint(1, size - 1), 'Direction' : 2}}
 	if os.path.isfile('./worlds/' + name):
 		count = 1
 		while os.path.isfile('./worlds/' + name + str(count)):
@@ -553,7 +579,7 @@ def create_world():
 def save_game():
 	global playing
 	name = world_selector.get_value()[0]
-	world = {'map' : aMap, 'eq' : ItemBar, 'player' : oPlayer}
+	world = {'map' : aMap, 'mapBack' : aMapBack, 'eq' : ItemBar, 'player' : oPlayer}
 	file = open('./worlds/' + name, 'w')
 	file.write(json.dumps(world))
 	playing = False
