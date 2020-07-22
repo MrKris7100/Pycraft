@@ -147,17 +147,17 @@ def TimerDiff(hTimer):
 def BlockPlace(pX, pY, iID = -1): #Stawianie bloków
 	if iID != -1:
 		aMap[pX][pY] = aBlockInfo[iID]['ID']
-	elif ItemBar[itemSelector][1] and not aBlockInfo[aMap[pX][pY]]['bMine'] and aBlockInfo[aMap[pX][pY]]['Trans']:
-		if ItemBar[itemSelector][0] == 13 and aMap[pX][pY] != 9: return
-		if iID == 7 and aMap[x][y] != 1: return
+	elif ItemBar[itemSelector][3][1] and not aBlockInfo[aMap[pX][pY]]['bMine'] and aBlockInfo[aMap[pX][pY]]['Trans']:
+		if ItemBar[itemSelector][3][0] == 13 and aMap[pX][pY] != 9: return
+		if ItemBar[itemSelector][3][0] == 7 and aMap[x][y] != 1: return
 		if playing == 2:
 			s.send(data2bytes('placeBlock,' + str(pX) + ',' + str(pY) + ',' + str(itemSelector)))
 		else:
-			iID = ItemBar[itemSelector][0]
+			iID = ItemBar[itemSelector][3][0]
 			aMap[pX][pY] = iID
-			ItemBar[itemSelector][1] -= 1
+			ItemBar[itemSelector][3][1] -= 1
 			#if iID == 7: AddTree(pX, pY)
-			if not ItemBar[itemSelector][1]: ItemBar[itemSelector][0] = 0
+			if not ItemBar[itemSelector][3][1]: ItemBar[itemSelector][3][0] = 0
 	else:
 		return
 			
@@ -198,7 +198,15 @@ def IDToTexture(iID, iX, iY, iW = 48, iH = 48, bEQ = 0): #Zamienia id na HANDLE 
 		'''
 
 def DrawInventory():#Funkcja rysowania ekwipunku
-	window.blit(txt_inventory, (math.floor((width - 397) / 2), math.floor((height - 203) / 2)))
+	xOffset = math.floor((width - 397) / 2)
+	yOffset = math.floor((height - 203) / 2)
+	window.blit(txt_inventory, (xOffset, yOffset))
+	for iX in range(9):
+		for iY in range(4):
+			if ItemBar[iX][iY][0]:
+				IDToTexture(ItemBar[iX][iY][0], 18 + (iX * 40 + iX) + xOffset, 18 + (iY * 40 + iY) + yOffset + 10 if iY == 3 else 0, 32, 32, 1)
+				DrawString(ItemBar[iX][iY][1], 18 + (iX * 40 + iX) + xOffset, 18 + (iY * 40 + iY) + yOffset + 24 + 10 if iY == 3 else 0, 12)
+				
 
 def DrawMap():#Funkcja rysowania mapy
 	'''
@@ -352,29 +360,28 @@ def BlockAddEq(iID, pX, pY): #Dodawanie bloku do ekwipunku
 		iCount = 1
 		#TreeDelete(pX, pY)
 	if iCount == 0: return 1
-	for iC in range(0, 8):
-		if ItemBar[iC][3][0] == sID:
-			iSelector = [iC, 3]
-			break
-	for iC2 in range(3):
+	for iC2 in [3, 0, 1, 2]:
 		for iC in range(9):
 			if ItemBar[iC][iC2][0] == sID:
 				iSelector = [iC, iC2]
-	if iSelector == -1:
-		for iC in range(0, 8):
-			if ItemBar[iC][3][0] == 0:
-				iSelector = [iC, 3]
 				break
-	if iSelector == -1:
-		for iC2 in range(3):
+		else:
+			continue
+		break
+	if iSelector[0] == -1 and iSelector[1] == -1:
+		for iC2 in [3, 0, 1, 2]:
 			for iC in range(9):
 				if ItemBar[iC][iC2][0] == 0:
 					iSelector = [iC, iC2]
 					break
+			else:
+				continue
+			break
 	if iSelector[0] != -1 and iSelector[1] != -1:
 		ItemBar[iSelector[0]][iSelector[1]][0] = sID
 		ItemBar[iSelector[0]][iSelector[1]][1] += iCount
 		return 1
+	print(ItemBar)
 	return 0
 	
 def MouseControl():
@@ -420,49 +427,49 @@ def generate_map(iMapSize):
 	for iX in range(1, iMapSize - 1):#dirt loop
 		for iY in range(1, iMapSize - 1):
 			aMap[iX][iY] = 1
-		#generating terrain
-		perlin = perlin_array((iMapSize, iMapSize))
-		perlin2 = perlin_array((iMapSize, iMapSize))
-		for y in range(1, iMapSize - 1):
-			for x in range(1, iMapSize - 1):
-				if perlin[x][y] >= 0 and perlin[x][y] <= 0.25:
-					aMap[x][y] = 8 #Water
-				elif perlin[x][y] >0.25 and perlin[x][y] <= 0.5:
-					if perlin2[x][y] > 0.75:
-						aMap[x][y] = 10 # Mineable sand
-					else:
-						aMap[x][y] = 9 #Sand
-					aMapBack[x][y] = 9
-				elif perlin[x][y] > 0.5 and perlin[x][y] <= 0.75:
-					if perlin2[x][y] > 0.75:
-						aMap[x][y] = 2
-					else:
-						aMap[x][y] = 1
-					aMapBack[x][y] = 2
-				elif perlin[x][y] > 0.75 and perlin[x][y] <= 1:
-					aMap[x][y] = 12 #Stone
-					aMapBack[x][y] = 11
-		for y in range(1, iMapSize - 1): #Cactus loop
-			for x in range(1, iMapSize - 1):
-				if aMap[x][y] == 9:
-					if random.randint(1, 20) == 10:
-						aMap[x][y] = 13
-		for iSteps in range(int(iMapSize ** 2 / 24)):#tree loop
-			iRandX = random.randint(2, iMapSize - 2)
-			iRandY = random.randint(2, iMapSize - 2)
+	#generating terrain
+	perlin = perlin_array((iMapSize, iMapSize))
+	perlin2 = perlin_array((iMapSize, iMapSize))
+	for y in range(1, iMapSize - 1):
+		for x in range(1, iMapSize - 1):
+			if perlin[x][y] >= 0 and perlin[x][y] <= 0.25:
+				aMap[x][y] = 8 #Water
+			elif perlin[x][y] >0.25 and perlin[x][y] <= 0.5:
+				if perlin2[x][y] > 0.75:
+					aMap[x][y] = 10 # Mineable sand
+				else:
+					aMap[x][y] = 9 #Sand
+				aMapBack[x][y] = 9
+			elif perlin[x][y] > 0.5 and perlin[x][y] <= 0.75:
+				if perlin2[x][y] > 0.75:
+					aMap[x][y] = 2
+				else:
+					aMap[x][y] = 1
+				aMapBack[x][y] = 1
+			elif perlin[x][y] > 0.75 and perlin[x][y] <= 1:
+				aMap[x][y] = 12 #Stone
+				aMapBack[x][y] = 11
+	for y in range(1, iMapSize - 1): #Cactus loop
+		for x in range(1, iMapSize - 1):
+			if aMap[x][y] == 9:
+				if random.randint(1, 20) == 10:
+					aMap[x][y] = 13
+	for iSteps in range(int(iMapSize ** 2 / 24)):#tree loop
+		iRandX = random.randint(2, iMapSize - 2)
+		iRandY = random.randint(2, iMapSize - 2)
+		for iX in range(iRandX - 1, iRandX + 2):
+			for iY in range(iRandY - 1, iRandY + 2):
+				if aMap[iX][iY] == 9 or aMap[iX][iY] == 10:
+					iSteps -= 1
+					continue
+		if aMap[iRandX][iRandY] == 1:
 			for iX in range(iRandX - 1, iRandX + 2):
 				for iY in range(iRandY - 1, iRandY + 2):
-					if aMap[iX][iY] == 9 or aMap[iX][iY] == 10:
-						iSteps -= 1
-						continue
-			if aMap[iRandX][iRandY] == 1:
-				for iX in range(iRandX - 1, iRandX + 2):
-					for iY in range(iRandY - 1, iRandY + 2):
-						if aMap[iX][iY] != 0:
-							aMap[iX][iY] = 5
-				aMap[iRandX][iRandY] = 4
-			else:
-				iSteps -= 1
+					if aMap[iX][iY] != 0:
+						aMap[iX][iY] = 5
+			aMap[iRandX][iRandY] = 4
+		else:
+			iSteps -= 1
 
 def start_game():
 	name = world_selector.get_value()
