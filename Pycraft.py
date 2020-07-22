@@ -9,10 +9,12 @@ import json
 import pygame_menu
 import os
 import threading
+from blocks import *
+from net import *
 pygame.init()
 
 width, height = 480, 480
-blocks = [math.floor(math.floor(width / 48) / 2), math.floor(math.floor(height / 48) / 2)]
+blocksxy = [math.floor(math.floor(width / 48) / 2), math.floor(math.floor(height / 48) / 2)]
 
 nick = 'Player' + str(random.randint(1, 9))
 
@@ -41,42 +43,6 @@ oPlayer = {}
 players = []
 oOffset = {'X' : 0, 'Y' : 0, 'Direction' : 0}
 #########################################################
-def BlockAdd(iID, bTrans, bMine, iDigTime):
-	aBlockInfo.append({'ID' : iID, 'Trans' : bTrans, 'bMine' : bMine, 'iDigTime' : iDigTime})
-################### BLOCKS INFO ########################
-aBlockInfo = [] #ID, Trans, Mineable, DigTime
-BlockAdd(0, 0, 0, 0) #Bedrock
-BlockAdd(1, 1, 0 , 0) #Dirt (Background)
-BlockAdd(2, 0, 1, 150) #Dirt (Minable)
-BlockAdd(3, 0, 1, 250) #Wood
-BlockAdd(4, 0, 1, 250) #Tree
-BlockAdd(5, 1, 1, 100) #Leaves
-BlockAdd(6, 0, 1, 250) #Log (Tree)
-BlockAdd(7, 1, 1, 0) #Plant (Tree)
-BlockAdd(8, 0, 0, 0) #Water
-BlockAdd(9, 1, 0, 0) #Sand
-BlockAdd(10, 0, 1, 150) #Sand (Mineable)
-BlockAdd(11, 1, 0, 0) #Stone
-BlockAdd(12, 0, 1, 500) #Stone (Mineable)
-BlockAdd(13, 0, 1, 150) #Cactus
-########################################################
-################### BLOCKS TEXTURES LOAD ###############
-txt_id = []
-txt_id.append(pygame.image.load("./Assets/Blocks/bedrock.png")) #Bedrock, ID 0
-txt_id.append(pygame.image.load("./Assets/Blocks/dirt_b.png")) #Dirt (background), ID 1
-txt_id.append(pygame.image.load("./Assets/Blocks/dirt.png")) #Dirt, ID 2
-txt_id.append(pygame.image.load("./Assets/Blocks/wood.png")) #Wood, ID 3
-txt_id.append(pygame.image.load("./Assets/Blocks/tree.png")) #Drzewo, ID 4
-txt_id.append(pygame.image.load("./Assets/Blocks/leaves.png")) #Liście, ID 5
-txt_id.append(pygame.image.load("./Assets/Blocks/log.png")) #LOG, ID 6
-txt_id.append(pygame.image.load("./Assets/Blocks/plant.png")) #Plant (Tree), ID 7
-txt_id.append(pygame.image.load("./Assets/Blocks/water.png")) #Water, ID 8
-txt_id.append(pygame.image.load("./Assets/Blocks/sand_b.png")) #Sand (background), ID 9
-txt_id.append(pygame.image.load("./Assets/Blocks/sand.png")) #Sand (Mineable), ID 10
-txt_id.append(pygame.image.load("./Assets/Blocks/stone_b.png")) #Stone (background, ID 11
-txt_id.append(pygame.image.load("./Assets/Blocks/stone.png")) #Stone (Mineable), ID 12
-txt_id.append(pygame.image.load("./Assets/Blocks/cactus.png")) #Cactus, ID 13
-txt_black = pygame.image.load("./Assets/Blocks/black.png")
 txt_m_stage = [0 for x in range(4)]
 txt_m_stage[1] = pygame.image.load("./Assets/Blocks/m_stage_1.png") #Mine stage :1
 txt_m_stage[2] = pygame.image.load("./Assets/Blocks/m_stage_2.png") #Mine stage :2
@@ -100,30 +66,8 @@ txt_light[3] = pygame.image.load("./Assets/Light/30.png")# 30%
 txt_light[4] = pygame.image.load("./Assets/Light/40.png")# 40%
 txt_light[5] = pygame.image.load("./Assets/Light/50.png")# 50%
 ########################################################
-################### FONTS LOAD #########################
-#Font_red = _FontCreate(@ScriptDir & "Data/Font/", 0, -100, -100)
-#Font_white = _FontCreate(@ScriptDir & "Data/Font/")
-#Ekran ładowania
-#AdlibRegister("loading_screen", 50)
 #Oświetlenie
 light_c, light_v, light_val = 0, 0, 0
-#AdlibRegister("light", 10000) ;10s
-
-def recvall(sock):
-	BUFF_SIZE = 4 # 4 KiB
-	data = b''
-	while True:
-		part = sock.recv(BUFF_SIZE)
-		data += part
-		if len(part) < BUFF_SIZE:
-			break
-	return data
-
-def data2bytes(data):
-    return bytes(json.dumps({'data' : data}), encoding='utf8')
-    
-def bytes2data(bytes):
-	return json.loads(bytes.decode('utf8'))
 	
 def perlin_array(shape, scale=100, octaves = 6,  persistence = 0.5,  lacunarity = 2.0,  seed = None):
 	if not seed:
@@ -147,10 +91,10 @@ def TimerDiff(hTimer):
 	
 def BlockPlace(pX, pY, iID = -1): #Stawianie bloków
 	if iID != -1:
-		aMap[pX][pY] = aBlockInfo[iID]['ID']
-	elif ItemBar[itemSelector][3][1] and not aBlockInfo[aMap[pX][pY]]['bMine'] and aBlockInfo[aMap[pX][pY]]['Trans']:
+		aMap[pX][pY] = iID
+	elif ItemBar[itemSelector][3][1] and not blocks.isMineable(aMap[pX][pY]) and blocks.isWalkable(aMap[pX][pY]):
 		if ItemBar[itemSelector][3][0] == 13 and aMap[pX][pY] != 9: return
-		if ItemBar[itemSelector][3][0] == 7 and aMap[x][y] != 1: return
+		if ItemBar[itemSelector][3][0] == 7 and aMap[pX][pY] != 1: return
 		if playing == 2:
 			s.send(data2bytes('placeBlock,' + str(pX) + ',' + str(pY) + ',' + str(itemSelector)))
 		else:
@@ -175,16 +119,13 @@ def PlantTree(pX, pY):
 def IDToTexture(iID, iX, iY, iW = 48, iH = 48, bEQ = 0): #Zamienia id na HANDLE textury
 	if iID == 7: #Plant
 		if not bEQ:
-			window.blit(pygame.transform.scale(txt_id[1], (iW, iH)), (iX, iY))
-		window.blit(pygame.transform.scale(txt_id[7], (iW, iH)), (iX, iY))
+			window.blit(pygame.transform.scale(blocks.getTexture(1), (iW, iH)), (iX, iY))
 	elif iID == 5: #Leaves
-		window.blit(pygame.transform.scale(txt_id[5], (iW, iH)), (iX, iY))
+		window.blit(pygame.transform.scale(blocks.getTexture(5), (iW, iH)), (iX, iY))
 	elif iID == 13: #Cactus
 		if not bEQ:
-			window.blit(pygame.transform.scale(txt_id[9], (iW, iH)), (iX, iY))
-		window.blit(pygame.transform.scale(txt_id[13], (iW, iH)), (iX, iY))
-	else:
-		window.blit(pygame.transform.scale(txt_id[iID], (iW, iH)), (iX, iY))
+			window.blit(pygame.transform.scale(blocks.getTexture(9), (iW, iH)), (iX, iY))
+	window.blit(pygame.transform.scale(blocks.getTexture(iID), (iW, iH)), (iX, iY))
 
 def DrawInventory():#Funkcja rysowania ekwipunku
 	xOffset = math.floor((width - 397) / 2)
@@ -209,43 +150,43 @@ def DrawMap():#Funkcja rysowania mapy
 		print("")
 	'''
 	leaves = []
-	for iX in range(oPlayer['X'] - blocks[0] - 1, oPlayer['X'] + blocks[0] + 2):
-		for iY in range(oPlayer['Y'] - blocks[0] - 1, oPlayer['Y'] + blocks[1] + 2):
+	for iX in range(oPlayer['X'] - blocksxy[0] - 1, oPlayer['X'] + blocksxy[0] + 2):
+		for iY in range(oPlayer['Y'] - blocksxy[0] - 1, oPlayer['Y'] + blocksxy[1] + 2):
 			if iX < 0 or iX > iMapSize -1 or iY < 0 or iY > iMapSize - 1:
 				IDToTexture(0, #Txt bloku z mapy
-				((iX - (oPlayer['X'] - blocks[0])) * 48) + oOffset['X'], #pozycja X rysowania w oknie
-				((iY - (oPlayer['Y'] - blocks[1])) * 48) + oOffset['Y']) #pozycja Y rysowania w oknie
+				((iX - (oPlayer['X'] - blocksxy[0])) * 48) + oOffset['X'], #pozycja X rysowania w oknie
+				((iY - (oPlayer['Y'] - blocksxy[1])) * 48) + oOffset['Y']) #pozycja Y rysowania w oknie
 			elif aMap[iX][iY] == 5:
 				IDToTexture(1, #rysowanie ziemi
-				((iX - (oPlayer['X'] - blocks[0])) * 48) + oOffset['X'], #pozycja X rysowania w oknie
-				((iY - (oPlayer['Y'] - blocks[1])) * 48) + oOffset['Y']) #pozycja Y rysowania w oknie
+				((iX - (oPlayer['X'] - blocksxy[0])) * 48) + oOffset['X'], #pozycja X rysowania w oknie
+				((iY - (oPlayer['Y'] - blocksxy[1])) * 48) + oOffset['Y']) #pozycja Y rysowania w oknie
 				leaves.append((iX, iY))
 			else:
 				IDToTexture(aMap[iX][iY], #Txt bloku z mapy
-				((iX - (oPlayer['X'] - blocks[0])) * 48) + oOffset['X'], #pozycja X rysowania w oknie
-				((iY - (oPlayer['Y'] - blocks[1])) * 48) + oOffset['Y']) #pozycja Y rysowania w oknie
+				((iX - (oPlayer['X'] - blocksxy[0])) * 48) + oOffset['X'], #pozycja X rysowania w oknie
+				((iY - (oPlayer['Y'] - blocksxy[1])) * 48) + oOffset['Y']) #pozycja Y rysowania w oknie
 	if playing == 2:
-		for iX in range(oPlayer['X'] - blocks[0], oPlayer['X'] + blocks[0] + 1):
-			for iY in range(oPlayer['Y'] - blocks[0], oPlayer['Y'] + blocks[1] + 1):
+		for iX in range(oPlayer['X'] - blocksxy[0], oPlayer['X'] + blocksxy[0] + 1):
+			for iY in range(oPlayer['Y'] - blocksxy[0], oPlayer['Y'] + blocksxy[1] + 1):
 				for player in players:
 					if player['X'] == iX and player['Y'] == iY:
-						window.blit(txt_player[player['Direction']], ((iX - oPlayer['X'] + blocks[0]) * 48 + oOffset['X'], (iY - oPlayer['Y'] + blocks[1]) * 48 + oOffset['Y'])) #postać
-	window.blit(txt_player[oPlayer['Direction']], (blocks[0] * 48, blocks[1] * 48)) #postać
+						window.blit(txt_player[player['Direction']], ((iX - oPlayer['X'] + blocksxy[0]) * 48 + oOffset['X'], (iY - oPlayer['Y'] + blocksxy[1]) * 48 + oOffset['Y'])) #postać
+	window.blit(txt_player[oPlayer['Direction']], (blocksxy[0] * 48, blocksxy[1] * 48)) #postać
 	if len(leaves):
 		for leaf in leaves:
 			IDToTexture(5, #Rysowanie liści
-			((leaf[0] - (oPlayer['X'] - blocks[0])) * 48) + oOffset['X'], #pozycja X rysowania w oknie
-			((leaf[1] - (oPlayer['Y'] - blocks[1])) * 48) + oOffset['Y']) #pozycja Y rysowania w oknie
+			((leaf[0] - (oPlayer['X'] - blocksxy[0])) * 48) + oOffset['X'], #pozycja X rysowania w oknie
+			((leaf[1] - (oPlayer['Y'] - blocksxy[1])) * 48) + oOffset['Y']) #pozycja Y rysowania w oknie
 	window.blit(pygame.transform.scale(txt_light[int(light_val / 10)], (528, 528)), (0, 0))
 	if oDig['Dig'] != -1:
 		window.blit(txt_m_stage[oDig['Dig']],
-		((oDig['X'] - oPlayer['X'] + blocks[0]) * 48,
-		(oDig['Y'] - oPlayer['Y'] + blocks[1]) * 48))
+		((oDig['X'] - oPlayer['X'] + blocksxy[0]) * 48,
+		(oDig['Y'] - oPlayer['Y'] + blocksxy[1]) * 48))
 
 def MapOffset(oX = 0, oY = 0):
 	if aMap[oPlayer['X'] + oX][oPlayer['Y'] + oY] == 0: return 0
 	if iDeveloper: return 1
-	return aBlockInfo[aMap[oPlayer['X'] + oX][oPlayer['Y'] + oY]]['Trans']
+	return blocks.isWalkable(aMap[oPlayer['X'] + oX][oPlayer['Y'] + oY])
 
 def PlayerMove(key = None):
 	global itemSelector
@@ -327,13 +268,13 @@ def InventoryControl(iButton):
 
 def MouseToBlock():
 	tMouse = _Mouse()
-	tMouse[0] = math.floor(tMouse[0] / 48) + oPlayer['X'] - blocks[0]
-	tMouse[1] = math.floor(tMouse[1] / 48) + oPlayer['Y'] - blocks[1]
+	tMouse[0] = math.floor(tMouse[0] / 48) + oPlayer['X'] - blocksxy[0]
+	tMouse[1] = math.floor(tMouse[1] / 48) + oPlayer['Y'] - blocksxy[1]
 	return tMouse
 	
 def BlockDig(pX, pY): #Kopanie bloków
 	global tMouseInterval
-	if aBlockInfo[aMap[pX][pY]]['bMine']:
+	if blocks.isMineable(aMap[pX][pY]):
 		#Pre switch dla kilofów
 
 		if iDeveloper: oDig['Dig'] = 4
@@ -345,7 +286,7 @@ def BlockDig(pX, pY): #Kopanie bloków
 			return
 		else:
 			if pX == oDig['X'] and pY == oDig['Y'] and not iDeveloper:
-				if TimerDiff(tMouseInterval) >= aBlockInfo[aMap[pX][pY]]['iDigTime']:
+				if TimerDiff(tMouseInterval) >= blocks.getDigtime(aMap[pX][pY]):
 					tMouseInterval = TimerInit()
 					oDig['Dig'] += 1
 			else:
@@ -377,21 +318,12 @@ def BlockAddEq(iID, pX, pY): #Dodawanie bloku do ekwipunku
 	if iCount == 0: return 1
 	for iC2 in [3, 0, 1, 2]:
 		for iC in range(9):
-			if ItemBar[iC][iC2][0] == sID:
+			if ItemBar[iC][iC2][0] == 0 or ItemBar[iC][iC2][0] == sID:
 				iSelector = [iC, iC2]
 				break
 		else:
 			continue
 		break
-	if iSelector[0] == -1 and iSelector[1] == -1:
-		for iC2 in [3, 0, 1, 2]:
-			for iC in range(9):
-				if ItemBar[iC][iC2][0] == 0:
-					iSelector = [iC, iC2]
-					break
-			else:
-				continue
-			break
 	if iSelector[0] != -1 and iSelector[1] != -1:
 		ItemBar[iSelector[0]][iSelector[1]][0] = sID
 		ItemBar[iSelector[0]][iSelector[1]][1] += iCount
@@ -420,7 +352,7 @@ def DrawItembar():
 	window.blit(txt_itembar, (0 + xOffset, height - 96))
 	window.blit(txt_itemselector, (itemSelector * 43 + itemSelector - 1 + xOffset, height - 96))
 	for iC in range(9):
-		if ItemBar[iC][3][0] > 1:
+		if ItemBar[iC][3][0] > 0:
 			IDToTexture(ItemBar[iC][3][0], 12 + (iC * 43 + iC) - 1 + xOffset, height - 84, 24, 24, 1)
 			DrawString(ItemBar[iC][3][1], 12 + (iC * 43 + iC) - 1 + xOffset, height - 64, 12)
 #Main game loop
@@ -473,6 +405,7 @@ def generate_map(iMapSize):
 	for iSteps in range(int(iMapSize ** 2 / 24)):#tree loop
 		iRandX = random.randint(2, iMapSize - 2)
 		iRandY = random.randint(2, iMapSize - 2)
+		#TODO fix this loop
 		for iX in range(iRandX - 1, iRandX + 2):
 			for iY in range(iRandY - 1, iRandY + 2):
 				if aMap[iX][iY] == 9 or aMap[iX][iY] == 10:
@@ -489,7 +422,7 @@ def generate_map(iMapSize):
 
 def start_game():
 	name = world_selector.get_value()
-	if name[1] == -1: return
+	if not os.path.exists('./worlds/' + name[0]): return
 	global playing, aMap, ItemBar, oPlayer, iMapSize, aMapBack
 	file = open('./worlds/' + name[0], 'r')
 	data = json.loads(file.read())
@@ -649,7 +582,7 @@ menus[0].add_button('Quit', switch_menu, -1)
 
 menus.append(pygame_menu.Menu(height, width, 'Single player', theme=theme))
 menus[1].add_label('Select world', font_size=18)
-world_selector = menus[1].add_selector('', [('No worlds', -1)])
+world_selector = menus[1].add_selector('', [('No worlds',)])
 menus[1].add_button('Play', start_game)
 menus[1].add_button('Delete', delete_world)
 menus[1].add_button('Create', switch_menu, 2)
