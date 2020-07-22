@@ -96,7 +96,7 @@ def BlockPlace(pX, pY, iID = -1): #Stawianie bloków
 		if ItemBar[itemSelector][3][0] == 13 and aMap[pX][pY] != 9: return
 		if ItemBar[itemSelector][3][0] == 7 and aMap[pX][pY] != 1: return
 		if playing == 2:
-			s.send(data2bytes('placeBlock,' + str(pX) + ',' + str(pY) + ',' + str(itemSelector)))
+			s.send(data2bytes(['placeBlock', pX, pY, itemSelector]))
 		else:
 			iID = ItemBar[itemSelector][3][0]
 			aMap[pX][pY] = iID
@@ -205,7 +205,7 @@ def PlayerMove(key = None):
 			if oOffset['X'] == -48: oPlayer['X'] += 1
 			if playing == 2:
 				with locker:
-					s.send(data2bytes('movePlayer,' + str(oPlayer['X']) + ',' + str(oPlayer['Y']) + ',' + str(oPlayer['Direction'])))
+					s.send(data2bytes(['movePlayer', oPlayer['X'], oPlayer['Y'], oPlayer['Direction']]))
 			oOffset['X'] = 0
 			oOffset['Y'] = 0
 			oOffset['Direction'] = 0
@@ -295,7 +295,7 @@ def BlockDig(pX, pY): #Kopanie bloków
 			oDig['Dig'] = -1
 			if playing == 2:
 				with locker:
-					s.send(data2bytes('delBlock,' + str(pX) + ',' + str(pY)))
+					s.send(data2bytes(['delBlock', pX, pY]))
 			else:
 				BlockAddEq(aMap[pX][pY], pX, pY) #Dodawanie do eq
 				aMap[pX][pY] = aMapBack[pX][pY]
@@ -328,7 +328,6 @@ def BlockAddEq(iID, pX, pY): #Dodawanie bloku do ekwipunku
 		ItemBar[iSelector[0]][iSelector[1]][0] = sID
 		ItemBar[iSelector[0]][iSelector[1]][1] += iCount
 		return 1
-	print(ItemBar)
 	return 0
 	
 def MouseControl(iButton):
@@ -438,34 +437,33 @@ s = None
 def Client():
 	while playing:
 		with locker:
-			s.send(data2bytes('getUpdates'))
+			s.send(data2bytes(['getUpdates']))
 		while True:
 			data = s.recv(1024)
 			if data:
-				data = bytes2data(data)
+				data = bytes2data(data)[0]
 				for update in data['data']:
-					data = update.split(',')
-					if data[0] == 'delBlock':
-						aMap[int(data[1])][int(data[2])] = int(data[3])
-					elif data[0] == 'movePlayer' and data[1] != nick:
+					if update[0] == 'delBlock':
+						aMap[update[1]][update[2]] = update[3]
+					elif update[0] == 'movePlayer' and update[1] != nick:
 						for player in range(len(players)):
-							players[player]['X'] = int(data[2])
-							players[player]['Y'] = int(data[3])
-							players[player]['Direction'] = int(data[4])
-					elif data[0] == 'addPlayer':
-						players.append({'nick' : data[1], 'X' : int(data[2]), 'Y' : int(data[3]), 'Direction' : int(data[4])})
-					elif data[0] == 'removePlayer':
+							players[player]['X'] = update[2]
+							players[player]['Y'] = update[3]
+							players[player]['Direction'] = update[4]
+					elif update[0] == 'addPlayer':
+						players.append({'nick' : update[1], 'X' : update[2], 'Y' : update[3], 'Direction' : update[4]})
+					elif update[0] == 'removePlayer':
 						for player in players:
-							if player['nick'] == data[1]:
+							if player['nick'] == update[1]:
 								players.remove(player)
-					elif data[0] == 'placeBlock':
-						BlockPlace(int(data[1]), int(data[2]), int(data[3]))
-					elif data[0] == 'eqRemove':
-						ItemBar[int(data[1])][int(data[2])][1] -= 1
-						if not ItemBar[int(data[1])][int(data[2])][1]: ItemBar[int(data[1])][int(data[2])][0] = 0
-					elif data[0] == 'eqAdd':
-						ItemBar[int(data[1])][int(data[2])][0] = int(data[2])
-						ItemBar[int(data[1])][int(data[2])][1] += int(data[3])
+					elif update[0] == 'placeBlock':
+						BlockPlace(update[1], update[2], update[3])
+					elif update[0] == 'eqRemove':
+						ItemBar[update[1]][update[2]][1] -= 1
+						if not ItemBar[update[1]][update[2]][1]: ItemBar[update[1]][update[2]][0] = 0
+					elif update[0] == 'eqAdd':
+						ItemBar[update[1]][update[2]][0] = update[3]
+						ItemBar[update[1]][update[2]][1] += update[4]
 				break
 
 def start_game_multi():
@@ -476,22 +474,23 @@ def start_game_multi():
 	while True:
 		data = s.recv(1024)
 		if data:
-			data = bytes2data(data)
+			data = bytes2data(data)[0]
 			if data['data'] == 'getName':
 				s.send(data2bytes(nick))
 				while True:
 					data = s.recv(1024)
 					if data:
-						data = bytes2data(data)
+						data = bytes2data(data)[0]
 						if data['data'] == 'OK':
 							print('Logged in')
-							s.send(data2bytes('getInit'))
+							s.send(data2bytes(['getInit']))
 							while True:
 								data = recvall(s)
 								if data:
 									print('Map received')
-									data = bytes2data(data)
+									data = bytes2data(data)[0]
 									aMap = data['data']['map']
+									aMapBack = data['data']['mapBack']
 									iMapSize = len(aMap[0])
 									players = data['data']['players']
 									for player in players:
