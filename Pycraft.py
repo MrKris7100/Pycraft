@@ -32,6 +32,7 @@ io1 = 6
 io2 = -io1 # Skok offsetu
 b_Map = 0 # Mapa (ziemia/jaskinia
 aTrees = [] # Tablica drzew (mechanizm rozrostu)
+itemPicked = [0, 0]
 ################### STRUCTY
 oDig = {'Dig' : -1, 'X' : -1, 'Y' : -1}
 ItemBar = []
@@ -47,7 +48,7 @@ aBlockInfo = [] #ID, Trans, Mineable, DigTime
 BlockAdd(0, 0, 0, 0) #Bedrock
 BlockAdd(1, 1, 0 , 0) #Dirt (Background)
 BlockAdd(2, 0, 1, 150) #Dirt (Minable)
-BlockAdd(3, 0, 1, 0) #Water
+BlockAdd(3, 0, 1, 250) #Wood
 BlockAdd(4, 0, 1, 250) #Tree
 BlockAdd(5, 1, 1, 100) #Leaves
 BlockAdd(6, 0, 1, 250) #Log (Tree)
@@ -64,7 +65,7 @@ txt_id = []
 txt_id.append(pygame.image.load("./Assets/Blocks/bedrock.png")) #Bedrock, ID 0
 txt_id.append(pygame.image.load("./Assets/Blocks/dirt_b.png")) #Dirt (background), ID 1
 txt_id.append(pygame.image.load("./Assets/Blocks/dirt.png")) #Dirt, ID 2
-txt_id.append(pygame.image.load("./Assets/Blocks/water.png")) #Woda, ID 3
+txt_id.append(pygame.image.load("./Assets/Blocks/wood.png")) #Wood, ID 3
 txt_id.append(pygame.image.load("./Assets/Blocks/tree.png")) #Drzewo, ID 4
 txt_id.append(pygame.image.load("./Assets/Blocks/leaves.png")) #Liście, ID 5
 txt_id.append(pygame.image.load("./Assets/Blocks/log.png")) #LOG, ID 6
@@ -184,18 +185,6 @@ def IDToTexture(iID, iX, iY, iW = 48, iH = 48, bEQ = 0): #Zamienia id na HANDLE 
 		window.blit(pygame.transform.scale(txt_id[13], (iW, iH)), (iX, iY))
 	else:
 		window.blit(pygame.transform.scale(txt_id[iID], (iW, iH)), (iX, iY))
-		'''
-		Case 1
-			;_DirectDraw($txt_dirt_b, $iX, $iY)
-		Case 2
-			_DirectDraw($txt_dirt, $iX, $iY)
-		Case 3
-			_DirectDraw($txt_water, $iX, $iY)
-		Case 4
-			_DirectDraw($txt_tree, $iX, $iY)
-		Case 5
-			_DirectDraw($txt_leaves, $iX, $iY)
-		'''
 
 def DrawInventory():#Funkcja rysowania ekwipunku
 	xOffset = math.floor((width - 397) / 2)
@@ -204,8 +193,12 @@ def DrawInventory():#Funkcja rysowania ekwipunku
 	for iX in range(9):
 		for iY in range(4):
 			if ItemBar[iX][iY][0]:
-				IDToTexture(ItemBar[iX][iY][0], 18 + (iX * 40 + iX) + xOffset, 18 + (iY * 40 + iY) + yOffset + 10 if iY == 3 else 0, 32, 32, 1)
-				DrawString(ItemBar[iX][iY][1], 18 + (iX * 40 + iX) + xOffset, 18 + (iY * 40 + iY) + yOffset + 24 + 10 if iY == 3 else 0, 12)
+				IDToTexture(ItemBar[iX][iY][0], 18 + (iX * 40 + iX) + xOffset, 18 + (iY * 40 + iY) + yOffset + (10 if iY == 3 else 0), 32, 32, 1)
+				DrawString(ItemBar[iX][iY][1], 18 + (iX * 40 + iX) + xOffset, 18 + (iY * 40 + iY) + yOffset + 24 + (10 if iY == 3 else 0), 12)
+	if itemPicked[0]:
+		tMouse = _Mouse()
+		IDToTexture(itemPicked[0], tMouse[0] - 16, tMouse[1] - 16, 32, 32, 1)
+		DrawString(itemPicked[1], tMouse[0] - 16, tMouse[1] + 8, 12)
 				
 
 def DrawMap():#Funkcja rysowania mapy
@@ -301,19 +294,41 @@ def PlayerMove(key = None):
 				oOffset['Direction'] = io2
 			oPlayer['Direction'] = 1
 def _Mouse():
-	tMouse = {'X' : 0, 'Y' : 0, 'Button' : 0}
-	tMouse['X'], tMouse['Y'] = pygame.mouse.get_pos()
-	b1, b2, b3 = pygame.mouse.get_pressed()
-	if b1:
-		tMouse['Button'] = 1
-	elif b3:
-		tMouse['Button'] = 2
-	return tMouse
+	tMouse = pygame.mouse.get_pos()
+	return [tMouse[0], tMouse[1]]
+
+def MouseToInv():
+	tMouse = _Mouse()
+	xOffset = math.floor((width - 397) / 2)
+	yOffset = math.floor((height - 203) / 2)
+	for iX in range(9):
+		for iY in range(4):
+			x = 18 + (iX * 40 + iX) + xOffset
+			y = 18 + (iY * 40 + iY) + yOffset + (10 if iY == 3 else 0)
+			if tMouse[0] in range(x, x + 32) and tMouse[1] in range(y, y + 32):
+				return (iX, iY)
+	return (-1, -1)
+
+def InventoryControl(iButton):
+	tMouse = MouseToInv()
+	if iButton == 1:
+		if not itemPicked[0] and tMouse[0] != -1 and tMouse[1] != -1:
+			itemPicked[0] = ItemBar[tMouse[0]][tMouse[1]][0]
+			itemPicked[1] = ItemBar[tMouse[0]][tMouse[1]][1]
+			ItemBar[tMouse[0]][tMouse[1]][0], ItemBar[tMouse[0]][tMouse[1]][1] = 0, 0
+		else:
+			print(ItemBar[tMouse[0]][tMouse[1]], itemPicked)
+			if not ItemBar[tMouse[0]][tMouse[1]][0]:
+				ItemBar[tMouse[0]][tMouse[1]][0] = itemPicked[0]
+				ItemBar[tMouse[0]][tMouse[1]][1] = itemPicked[1]
+			elif ItemBar[tMouse[0]][tMouse[1]][0] == itemPicked[0]:
+				ItemBar[tMouse[0]][tMouse[1]][1] += itemPicked[1]
+			itemPicked[0], itemPicked[1] = 0, 0
 
 def MouseToBlock():
 	tMouse = _Mouse()
-	tMouse['X'] = math.floor(tMouse['X'] / 48) + oPlayer['X'] - blocks[0]
-	tMouse['Y'] = math.floor(tMouse['Y'] / 48) + oPlayer['Y'] - blocks[1]
+	tMouse[0] = math.floor(tMouse[0] / 48) + oPlayer['X'] - blocks[0]
+	tMouse[1] = math.floor(tMouse[1] / 48) + oPlayer['Y'] - blocks[1]
 	return tMouse
 	
 def BlockDig(pX, pY): #Kopanie bloków
@@ -384,12 +399,12 @@ def BlockAddEq(iID, pX, pY): #Dodawanie bloku do ekwipunku
 	print(ItemBar)
 	return 0
 	
-def MouseControl():
+def MouseControl(iButton):
 	oMouse = MouseToBlock()
-	if oMouse['Button'] == 1:
-		BlockDig(oMouse['X'], oMouse['Y'])
-	elif oMouse['Button'] == 2:
-		BlockPlace(oMouse['X'], oMouse['Y'])
+	if iButton == 1:
+		BlockDig(oMouse[0], oMouse[1])
+	elif iButton == 3:
+		BlockPlace(oMouse[0], oMouse[1])
 	else:
 		if oDig['Dig'] != -1:
 			oDig['Dig'] = -1
@@ -404,13 +419,14 @@ def DrawItembar():
 	xOffset = math.floor((width - 397) / 2)
 	window.blit(txt_itembar, (0 + xOffset, height - 96))
 	window.blit(txt_itemselector, (itemSelector * 43 + itemSelector - 1 + xOffset, height - 96))
-	for iC in range(0, 8):
+	for iC in range(9):
 		if ItemBar[iC][3][0] > 1:
 			IDToTexture(ItemBar[iC][3][0], 12 + (iC * 43 + iC) - 1 + xOffset, height - 84, 24, 24, 1)
 			DrawString(ItemBar[iC][3][1], 12 + (iC * 43 + iC) - 1 + xOffset, height - 64, 12)
 #Main game loop
 
 key = None
+button = None
 active_menu = 0
 playing = False
 paused = False
@@ -585,7 +601,7 @@ def create_world():
 	if not name:
 		name = 'world' + str(random.randint(0, 9999))
 	generate_map(size)
-	world = {'map' : aMap, 'mapBack' : aMapBack, 'eq' : [[[0 for e in range(2)] for x in range(4)] for y in range(9)], 'player' : {'X' : random.randint(1, size - 1), 'Y' : random.randint(1, size - 1), 'Direction' : 2}}
+	world = {'map' : aMap, 'mapBack' : aMapBack, 'eq' : [[[random.randint(0, 13) for e in range(2)] for x in range(4)] for y in range(9)], 'player' : {'X' : random.randint(1, size - 1), 'Y' : random.randint(1, size - 1), 'Direction' : 2}}
 	if os.path.isfile('./worlds/' + name):
 		count = 1
 		while os.path.isfile('./worlds/' + name + str(count)):
@@ -669,9 +685,9 @@ while True:
 			if playing == 2: disconnect()
 			pygame.quit()
 			quit()
-		if event.type == pygame.KEYUP:
+		elif event.type == pygame.KEYUP:
 			key = None
-		if event.type == pygame.KEYDOWN:
+		elif event.type == pygame.KEYDOWN:
 			if event.key == pygame.K_ESCAPE:
 				if playing == 2:
 					active_menu = 5
@@ -682,6 +698,12 @@ while True:
 				inventory = not inventory
 			else:
 				key = event.key
+		elif event.type == pygame.MOUSEBUTTONUP:
+			if inventory:
+				InventoryControl(event.button)
+			button = 0
+		elif event.type == pygame.MOUSEBUTTONDOWN:
+			button = event.button
 			
 	window.fill((0, 0, 0))
 	
@@ -690,7 +712,7 @@ while True:
 		if not inventory:
 			DrawItembar()
 			PlayerMove(key)
-			MouseControl()
+			MouseControl(button)
 		else:
 			DrawInventory()
 	elif active_menu == -1:
