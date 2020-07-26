@@ -251,6 +251,7 @@ def MouseToInv():
 	return (-1, -1)
 
 def InventoryControl(iButton):
+	global itemPicked
 	tMouse = MouseToInv()
 	if iButton == 1:
 		if not itemPicked[0] and tMouse[0] != -1 and tMouse[1] != -1:
@@ -258,13 +259,27 @@ def InventoryControl(iButton):
 			itemPicked[1] = ItemBar[tMouse[0]][tMouse[1]][1]
 			ItemBar[tMouse[0]][tMouse[1]][0], ItemBar[tMouse[0]][tMouse[1]][1] = 0, 0
 		else:
-			print(ItemBar[tMouse[0]][tMouse[1]], itemPicked)
-			if not ItemBar[tMouse[0]][tMouse[1]][0]:
-				ItemBar[tMouse[0]][tMouse[1]][0] = itemPicked[0]
-				ItemBar[tMouse[0]][tMouse[1]][1] = itemPicked[1]
-			elif ItemBar[tMouse[0]][tMouse[1]][0] == itemPicked[0]:
-				ItemBar[tMouse[0]][tMouse[1]][1] += itemPicked[1]
-			itemPicked[0], itemPicked[1] = 0, 0
+			if tMouse[0] != -1 and tMouse[1] != -1:
+				if not ItemBar[tMouse[0]][tMouse[1]][0]:
+					ItemBar[tMouse[0]][tMouse[1]][0] = itemPicked[0]
+					ItemBar[tMouse[0]][tMouse[1]][1] = itemPicked[1]
+					itemPicked[0], itemPicked[1] = 0, 0
+				elif ItemBar[tMouse[0]][tMouse[1]][0] == itemPicked[0]:
+					ItemBar[tMouse[0]][tMouse[1]][1] += itemPicked[1]
+					itemPicked[0], itemPicked[1] = 0, 0
+				else:
+					swap = [ItemBar[tMouse[0]][tMouse[1]][0], ItemBar[tMouse[0]][tMouse[1]][1]]
+					ItemBar[tMouse[0]][tMouse[1]][0] = itemPicked[0]
+					ItemBar[tMouse[0]][tMouse[1]][1] = itemPicked[1]
+					itemPicked = [swap[0], swap[1]]
+	elif iButton == 3:
+		if (not itemPicked[0] or ItemBar[tMouse[0]][tMouse[1]][0] == itemPicked[0]) and tMouse[0] != -1 and tMouse[1] != -1:
+			itemPicked[0] = ItemBar[tMouse[0]][tMouse[1]][0]
+			itemPicked[1] += math.ceil(ItemBar[tMouse[0]][tMouse[1]][1] / 2)
+			ItemBar[tMouse[0]][tMouse[1]][1] -= math.ceil(ItemBar[tMouse[0]][tMouse[1]][1] / 2)
+	if ItemBar[tMouse[0]][tMouse[1]][1] == 0:
+		ItemBar[tMouse[0]][tMouse[1]][0] = 0
+		
 
 def MouseToBlock():
 	tMouse = _Mouse()
@@ -621,11 +636,14 @@ while True:
 			key = None
 		elif event.type == pygame.KEYDOWN:
 			if event.key == pygame.K_ESCAPE:
-				if playing == 2:
-					active_menu = 5
+				if inventory:
+					inventory = False
 				else:
-					active_menu = 3
-				pause()
+					if playing == 2:
+						active_menu = 5
+					else:
+						active_menu = 3
+					pause()
 			elif event.key == pygame.K_e:
 				inventory = not inventory
 			else:
