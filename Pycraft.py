@@ -587,43 +587,64 @@ theme.menubar_close_button = False
 window = pygame.display.set_mode((width, height))#, pygame.FULLSCREEN)
 
 menus = []
+def generate_menus(width, height, fullscreen = False):
+	global menus
+	menus = []
+	menus.append(pygame_menu.Menu(height, width, 'Pycraft', theme=theme))
+	menus[0].add_button('Single player', switch_menu, 1)
+	menus[0].add_button('Multi player', switch_menu, 4)
+	menus[0].add_button('Settings', switch_menu, 6)
+	menus[0].add_button('Quit', switch_menu, -1)
 
-menus.append(pygame_menu.Menu(height, width, 'Pycraft', theme=theme))
-menus[0].add_button('Single player', switch_menu, 1)
-menus[0].add_button('Multi player', switch_menu, 4)
-menus[0].add_button('Settings', switch_menu, 0)
-menus[0].add_button('Quit', switch_menu, -1)
+	menus.append(pygame_menu.Menu(height, width, 'Single player', theme=theme))
+	menus[1].add_label('Select world', font_size=18)
+	world_selector = menus[1].add_selector('', [('No worlds',)])
+	menus[1].add_button('Play', start_game)
+	menus[1].add_button('Delete', delete_world)
+	menus[1].add_button('Create', switch_menu, 2)
+	menus[1].add_button('Back', switch_menu, 0)
+	worlds = worlds_list()
+	if len(worlds): world_selector.update_elements(worlds)
 
-menus.append(pygame_menu.Menu(height, width, 'Single player', theme=theme))
-menus[1].add_label('Select world', font_size=18)
-world_selector = menus[1].add_selector('', [('No worlds',)])
-menus[1].add_button('Play', start_game)
-menus[1].add_button('Delete', delete_world)
-menus[1].add_button('Create', switch_menu, 2)
-menus[1].add_button('Back', switch_menu, 0)
-worlds = worlds_list()
-if len(worlds): world_selector.update_elements(worlds)
+	menus.append(pygame_menu.Menu(height, width, 'Create world', theme=theme))
+	menus[2].add_label('Select world size', font_size=18)
+	world_size = menus[2].add_selector('', [('128',), ('256',), ('512',), ('1024', ), ('2048', )])
+	world_name = menus[2].add_text_input('World name: ', default='new world', maxchar=100, maxwidth=28, font_size=18)
+	menus[2].add_button('Create', create_world)
+	menus[2].add_button('Back', switch_menu, 1)
 
-menus.append(pygame_menu.Menu(height, width, 'Create world', theme=theme))
-menus[2].add_label('Select world size', font_size=18)
-world_size = menus[2].add_selector('', [('128',), ('256',), ('512',), ('1024', ), ('2048', )])
-world_name = menus[2].add_text_input('World name: ', default='new world', maxchar=100, maxwidth=28, font_size=18)
-menus[2].add_button('Create', create_world)
-menus[2].add_button('Back', switch_menu, 1)
+	menus.append(pygame_menu.Menu(height, width, 'Game paused', theme=theme))
+	menus[3].add_button('Back to game', pause)
+	menus[3].add_button('Save and exit', save_game)
 
-menus.append(pygame_menu.Menu(height, width, 'Game paused', theme=theme))
-menus[3].add_button('Back to game', pause)
-menus[3].add_button('Save and exit', save_game)
+	menus.append(pygame_menu.Menu(height, width, 'Multi player', theme=theme))
+	server_address = menus[4].add_text_input('Server address: ', maxchar=100, maxwidth=28, font_size=18)
+	menus[4].add_button('Connect', start_game_multi)
+	menus[4].add_button('Back', switch_menu, 0)
 
-menus.append(pygame_menu.Menu(height, width, 'Multi player', theme=theme))
-server_address = menus[4].add_text_input('Server address: ', maxchar=100, maxwidth=28, font_size=18)
-menus[4].add_button('Connect', start_game_multi)
-menus[4].add_button('Back', switch_menu, 0)
+	menus.append(pygame_menu.Menu(height, width, 'Multi player', theme=theme))
+	menus[5].add_button('Back to game', pause)
+	menus[5].add_button('Disconnect', disconnect)
 
-menus.append(pygame_menu.Menu(height, width, 'Multi player', theme=theme))
-menus[5].add_button('Back to game', pause)
-menus[5].add_button('Disconnect', disconnect)
+	menus.append(pygame_menu.Menu(height, width, 'Settings', theme=theme))
+	settings_nick = menus[6].add_text_input('Nickname: ', onchange=nickname, default='Player', maxchar=30, maxwidth=28, font_size=18)
+	menus[6].add_label('Screen resolution')
+	settings_resolution = menus[6].add_selector('', [('800x600', ), ('1024x768', ), ('1280x720', ), ('1280x1024', ), ('1360x768', ), ('1366x768', ), ('1440x900', ), ('1600x900', ), ('1920x1080', )], onchange=resolution)
+	menus[6].settings_fullscreen = menus[6].add_selector('Fullscreen', [('Yes', ), ('No', )], onchange=fullscreen)
 
+def fullscreen():
+	print(menus[6].settings_fullscreen.get_value())
+	window.set_mode(width, height, pygame.FULLSCREEN if settings_fullscreen.get_value()[0] == 'Yes' else None)
+	
+def nickname():
+	global nick
+	nick = settings_nick.get_value()
+	
+def resolution():
+	print(settings_resolution.get_value())
+
+generate_menus(width, height)
+	
 #Main loop
 while True:
 	pygame_events = pygame.event.get()
