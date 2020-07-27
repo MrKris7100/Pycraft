@@ -13,7 +13,7 @@ from blocks import *
 from net import *
 pygame.init()
 
-width, height = 480, 480
+width, height = 800, 600
 blocksxy = [math.floor(math.floor(width / 48) / 2), math.floor(math.floor(height / 48) / 2)]
 
 nick = 'Player' + str(random.randint(1, 9))
@@ -586,8 +586,25 @@ theme.menubar_close_button = False
 
 window = pygame.display.set_mode((width, height))#, pygame.FULLSCREEN)
 
+def fullscreen(full):
+	global width, height
+	window = pygame.display.set_mode((width, height), pygame.FULLSCREEN if full[0] == 'Yes' else 0)
+	
+def nickname(nickname):
+	global nick
+	nick = nickname
+	
+def resolution(res):
+	global width, height
+	size = res[0].split('x')
+	width = int(size[0])
+	height = int(size[1])
+	window = pygame.display.set_mode((width, height))
+	generate_menus(res[0])
+
 menus = []
-def generate_menus(width, height, fullscreen = False):
+
+def generate_menus(res = None):
 	global menus
 	menus = []
 	menus.append(pygame_menu.Menu(height, width, 'Pycraft', theme=theme))
@@ -628,22 +645,11 @@ def generate_menus(width, height, fullscreen = False):
 
 	menus.append(pygame_menu.Menu(height, width, 'Settings', theme=theme))
 	settings_nick = menus[6].add_text_input('Nickname: ', onchange=nickname, default='Player', maxchar=30, maxwidth=28, font_size=18)
-	menus[6].add_label('Screen resolution')
-	settings_resolution = menus[6].add_selector('', [('800x600', ), ('1024x768', ), ('1280x720', ), ('1280x1024', ), ('1360x768', ), ('1366x768', ), ('1440x900', ), ('1600x900', ), ('1920x1080', )], onchange=resolution)
-	menus[6].settings_fullscreen = menus[6].add_selector('Fullscreen', [('Yes', ), ('No', )], onchange=fullscreen)
-
-def fullscreen():
-	print(menus[6].settings_fullscreen.get_value())
-	window.set_mode(width, height, pygame.FULLSCREEN if settings_fullscreen.get_value()[0] == 'Yes' else None)
+	settings_resolution = menus[6].add_selector('Screen resolution: ', [('800x600', ), ('1024x768', ), ('1280x720', ), ('1280x1024', ), ('1360x768', ), ('1366x768', ), ('1440x900', ), ('1600x900', ), ('1920x1080', )], onchange=resolution)
+	if res: settings_resolution.set_value(res)
+	menus[6].settings_fullscreen = menus[6].add_selector('Fullscreen: ', [('No', ), ('Yes', )], onchange=fullscreen)
 	
-def nickname():
-	global nick
-	nick = settings_nick.get_value()
-	
-def resolution():
-	print(settings_resolution.get_value())
-
-generate_menus(width, height)
+generate_menus()
 	
 #Main loop
 while True:
