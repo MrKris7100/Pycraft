@@ -648,6 +648,7 @@ def generate_menus(res = None):
 	settings_resolution = menus[6].add_selector('Screen resolution: ', [('800x600', ), ('1024x768', ), ('1280x720', ), ('1280x1024', ), ('1360x768', ), ('1366x768', ), ('1440x900', ), ('1600x900', ), ('1920x1080', )], onchange=resolution)
 	if res: settings_resolution.set_value(res)
 	menus[6].settings_fullscreen = menus[6].add_selector('Fullscreen: ', [('No', ), ('Yes', )], onchange=fullscreen)
+	menus[6].add_button('Back', switch_menu, 0)
 	
 generate_menus()
 	
