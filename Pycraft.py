@@ -151,7 +151,7 @@ def DrawMap():#Funkcja rysowania mapy
 	'''
 	leaves = []
 	for iX in range(oPlayer['X'] - blocksxy[0] - 1, oPlayer['X'] + blocksxy[0] + 2):
-		for iY in range(oPlayer['Y'] - blocksxy[0] - 1, oPlayer['Y'] + blocksxy[1] + 2):
+		for iY in range(oPlayer['Y'] - blocksxy[1] - 1, oPlayer['Y'] + blocksxy[1] + 2):
 			if iX < 0 or iX > iMapSize -1 or iY < 0 or iY > iMapSize - 1:
 				IDToTexture(0, #Txt bloku z mapy
 				((iX - (oPlayer['X'] - blocksxy[0])) * 48) + oOffset['X'], #pozycja X rysowania w oknie
@@ -435,6 +435,7 @@ def generate_map(iMapSize):
 			iSteps -= 1
 
 def start_game():
+	global world_selector
 	name = world_selector.get_value()
 	if not os.path.exists('./worlds/' + name[0]): return
 	global playing, aMap, ItemBar, oPlayer, iMapSize, aMapBack
@@ -482,7 +483,7 @@ def Client():
 				break
 
 def start_game_multi():
-	global playing, aMap, iMapSize, nick, players, oPlayer, ItemBar, s
+	global playing, aMap, iMapSize, nick, players, oPlayer, ItemBar, s, server_address
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	HOST, PORT = server_address.get_value().split(':', 1)
 	s.connect((HOST, int(PORT)))
@@ -524,6 +525,7 @@ def start_game_multi():
 			break
 		
 def delete_world():
+	global world_Selector
 	name = world_selector.get_value()[0]
 	os.remove('./worlds/' + name)
 	world_selector.update_elements(worlds_list())
@@ -541,6 +543,7 @@ def pause():
 	paused = not paused
 
 def create_world():
+	global world_size, world_name, world_selector
 	size = int(world_size.get_value()[0])
 	name = world_name.get_value()
 	global aMap, active_menu, aMapBack
@@ -561,7 +564,7 @@ def create_world():
 	active_menu = 1
 	
 def save_game():
-	global playing
+	global playing, world_selector
 	name = world_selector.get_value()[0]
 	world = {'map' : aMap, 'mapBack' : aMapBack, 'eq' : ItemBar, 'player' : oPlayer}
 	file = open('./worlds/' + name, 'w')
@@ -605,7 +608,7 @@ def resolution(res):
 menus = []
 
 def generate_menus(res = None):
-	global menus
+	global menus, world_size, world_name, world_selector, server_address
 	menus = []
 	menus.append(pygame_menu.Menu(height, width, 'Pycraft', theme=theme))
 	menus[0].add_button('Single player', switch_menu, 1)
