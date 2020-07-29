@@ -32,13 +32,14 @@ locker = threading.Lock()
 ################### DEVELOPER MODE #####################
 iDeveloper = 0
 ########################################################
-#tMoveInterval # Timer ruchu
 tMouseInterval = None # Timer kopania
 io1 = 6
 io2 = -io1 # Skok offsetu
 b_Map = 0 # Mapa (ziemia/jaskinia
 aTrees = [] # Tablica drzew (mechanizm rozrostu)
 itemPicked = [0, 0]
+itemCrafted = [0, 0]
+itemCrafting2 = [[[0 for e in range(2)] for x in range(2)] for y in range(2)]
 ################### STRUCTY
 oDig = {'Dig' : -1, 'X' : -1, 'Y' : -1}
 ItemBar = []
@@ -132,14 +133,19 @@ def IDToTexture(iID, iX, iY, iW = 48, iH = 48, bEQ = 0, buff = window): #Zamieni
 	buff.blit(pygame.transform.scale(blocks.getTexture(iID), (iW, iH)), (iX, iY))
 
 def DrawInventory():#Funkcja rysowania ekwipunku
-	xOffset = math.floor((width - 397) / 2)
+	xOffset = math.floor((width - 490) / 2)
 	yOffset = math.floor((height - 203) / 2)
 	window.blit(txt_inventory, (xOffset, yOffset))
 	for iX in range(9):
 		for iY in range(4):
-			if ItemBar[iX][iY][0]:
+			if ItemBar[iX][iY][1]:
 				IDToTexture(ItemBar[iX][iY][0], 18 + (iX * 40 + iX) + xOffset, 18 + (iY * 40 + iY) + yOffset + (10 if iY == 3 else 0), 32, 32, 1)
 				DrawString(ItemBar[iX][iY][1], 18 + (iX * 40 + iX) + xOffset, 18 + (iY * 40 + iY) + yOffset + 24 + (10 if iY == 3 else 0), 12)
+	for iY in range(2):
+		for iX in range(2):
+			if ItemBar[2 * iY + iX][4][1]:
+				IDToTexture(ItemBar[2 * iY + iX][4][0], 396 + (iX * 40 + iX) + xOffset, 18 + (iY * 40 + iY) + yOffset, 32, 32, 1)
+				DrawString(ItemBar[2 * iY + iX][4][1], 396 + (iX * 40 + iX) + xOffset, 18 + (iY * 40 + iY) + yOffset + 24, 12)
 	if itemPicked[0]:
 		tMouse = _Mouse()
 		IDToTexture(itemPicked[0], tMouse[0] - 16, tMouse[1] - 16, 32, 32, 1)
@@ -255,7 +261,7 @@ def _Mouse():
 
 def MouseToInv():
 	tMouse = _Mouse()
-	xOffset = math.floor((width - 397) / 2)
+	xOffset = math.floor((width - 490) / 2)
 	yOffset = math.floor((height - 203) / 2)
 	for iX in range(9):
 		for iY in range(4):
@@ -263,18 +269,24 @@ def MouseToInv():
 			y = 18 + (iY * 40 + iY) + yOffset + (10 if iY == 3 else 0)
 			if tMouse[0] in range(x, x + 32) and tMouse[1] in range(y, y + 32):
 				return (iX, iY)
+	for iY in range(2):
+		for iX in range(2):
+			x = 394 + (iX * 40 + iX) + xOffset
+			y = 18 + (iY * 40 + iY) + yOffset
+			if tMouse[0] in range(x, x+ 32) and tMouse[1] in range(y + 32):
+				return (2 * iY + iX, 4)
 	return (-1, -1)
 
 def InventoryControl(iButton):
 	global itemPicked
 	tMouse = MouseToInv()
-	if iButton == 1:
-		if not itemPicked[0] and tMouse[0] != -1 and tMouse[1] != -1:
-			itemPicked[0] = ItemBar[tMouse[0]][tMouse[1]][0]
-			itemPicked[1] = ItemBar[tMouse[0]][tMouse[1]][1]
-			ItemBar[tMouse[0]][tMouse[1]][0], ItemBar[tMouse[0]][tMouse[1]][1] = 0, 0
-		else:
-			if tMouse[0] != -1 and tMouse[1] != -1:
+	if tMouse[0] != -1 and tMouse[1] != -1:
+		if iButton == 1:
+			if not itemPicked[0]:
+				itemPicked[0] = ItemBar[tMouse[0]][tMouse[1]][0]
+				itemPicked[1] = ItemBar[tMouse[0]][tMouse[1]][1]
+				ItemBar[tMouse[0]][tMouse[1]][0], ItemBar[tMouse[0]][tMouse[1]][1] = 0, 0
+			else:
 				if not ItemBar[tMouse[0]][tMouse[1]][0]:
 					ItemBar[tMouse[0]][tMouse[1]][0] = itemPicked[0]
 					ItemBar[tMouse[0]][tMouse[1]][1] = itemPicked[1]
@@ -287,13 +299,22 @@ def InventoryControl(iButton):
 					ItemBar[tMouse[0]][tMouse[1]][0] = itemPicked[0]
 					ItemBar[tMouse[0]][tMouse[1]][1] = itemPicked[1]
 					itemPicked = [swap[0], swap[1]]
-	elif iButton == 3:
-		if (not itemPicked[0] or ItemBar[tMouse[0]][tMouse[1]][0] == itemPicked[0]) and tMouse[0] != -1 and tMouse[1] != -1:
-			itemPicked[0] = ItemBar[tMouse[0]][tMouse[1]][0]
-			itemPicked[1] += math.ceil(ItemBar[tMouse[0]][tMouse[1]][1] / 2)
-			ItemBar[tMouse[0]][tMouse[1]][1] -= math.ceil(ItemBar[tMouse[0]][tMouse[1]][1] / 2)
+		elif iButton == 3:
+			if not itemPicked[0]:
+				itemPicked[0] = ItemBar[tMouse[0]][tMouse[1]][0]
+				itemPicked[1] = math.ceil(ItemBar[tMouse[0]][tMouse[1]][1] / 2)
+				ItemBar[tMouse[0]][tMouse[1]][1] -= math.ceil(ItemBar[tMouse[0]][tMouse[1]][1] / 2)
+			else:
+				if not ItemBar[tMouse[0]][tMouse[1]][0]:
+					ItemBar[tMouse[0]][tMouse[1]][0] == itemPicked[0]
+				if ItemBar[tMouse[0]][tMouse[1]][0] == itemPicked[0]:
+					ItemBar[tMouse[0]][tMouse[1]][1] += 1
+					itemPicked[1] -= 1
+					
 	if ItemBar[tMouse[0]][tMouse[1]][1] == 0:
 		ItemBar[tMouse[0]][tMouse[1]][0] = 0
+	if not itemPicked[1]:
+		itemPicked[0] = 0
 		
 
 def MouseToBlock():
@@ -567,7 +588,7 @@ def create_world():
 	if not name:
 		name = 'world' + str(random.randint(0, 9999))
 	generate_map(size)
-	world = {'map' : aMap, 'mapBack' : aMapBack, 'eq' : [[[random.randint(0, 13) for e in range(2)] for x in range(4)] for y in range(9)], 'player' : {'X' : random.randint(1, size - 1), 'Y' : random.randint(1, size - 1), 'Direction' : 2}}
+	world = {'map' : aMap, 'mapBack' : aMapBack, 'eq' : [[[random.randint(1, 13) for e in range(2)] for x in range(5)] for y in range(9)], 'player' : {'X' : random.randint(1, size - 1), 'Y' : random.randint(1, size - 1), 'Direction' : 2}}
 	if os.path.isfile('./worlds/' + name):
 		count = 1
 		while os.path.isfile('./worlds/' + name + str(count)):
@@ -702,7 +723,12 @@ while True:
 				InventoryControl(event.button)
 			button = 0
 		elif event.type == pygame.MOUSEBUTTONDOWN:
-			button = event.button
+			if (event.button == 4 or event.button == 5) and playing:
+				itemSelector += 1 if event.button == 4 else -1
+				if itemSelector == 9: itemSelector = 0
+				if itemSelector == -1: itemSelector = 9
+			else:
+				button = event.button
 			
 	window.fill((0, 0, 0))
 	
