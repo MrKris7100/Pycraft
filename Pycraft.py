@@ -623,6 +623,8 @@ def disconnect():
 
 theme = pygame_menu.themes.THEME_DEFAULT
 theme.menubar_close_button = False
+theme.widget_font = './Assets/Font/font.ttf'
+theme.title_font = theme.widget_font
 
 def fullscreen(full):
 	global width, height, iFullscreen
