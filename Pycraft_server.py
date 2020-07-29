@@ -3,7 +3,6 @@ import json
 import threading
 import keyboard
 import time
-import numpy
 import random
 from noise import pnoise2
 from blocks import *
@@ -26,16 +25,16 @@ aMapBack = [[0 for x in range(iMapSize)] for y in range(iMapSize)]
 
 def perlin_array(shape, scale=100, octaves = 6,  persistence = 0.5,  lacunarity = 2.0,  seed = None):
 	if not seed:
-		seed = numpy.random.randint(0, 100)
-		arr = numpy.zeros(shape)
+		seed = random.randint(0, 100)
+		arr = [[0 for a in range(shape[0])] for b in range(shape[1])]
 	for i in range(shape[0]):
 		for j in range(shape[1]):
 			arr[i][j] = pnoise2(i / scale, j / scale, octaves=octaves, persistence=persistence, lacunarity=lacunarity, repeatx=1024, repeaty=1024, base=seed)
-	max_arr = numpy.max(arr)
-	min_arr = numpy.min(arr)
-	norm_me = lambda x: (x-min_arr)/(max_arr - min_arr)
-	norm_me = numpy.vectorize(norm_me)
-	arr = norm_me(arr)
+	max_arr = max(map(max, arr))
+	min_arr = min(map(min, arr))
+	for i in range(shape[0]):
+		for j in range(shape[1]):
+			arr[i][j] = (arr[i][j] - min_arr) / (max_arr - min_arr)
 	return arr
 
 ################## MAP GENERATOR ###################
