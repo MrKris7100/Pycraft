@@ -17,8 +17,8 @@ width, height = 800, 600
 blocksxy = [math.floor(math.floor(width / 48) / 2), math.floor(math.floor(height / 48) / 2)]
 
 window = pygame.display.set_mode((width, height))
-buffer = pygame.Surface((width, height)).convert_alpha()
-buffer2 = pygame.Surface((width, height)).convert_alpha()
+buffer = pygame.Surface((width + 96, height + 96)).convert_alpha()
+buffer2 = pygame.Surface((width + 96, height + 96)).convert_alpha()
 
 nick = 'Player' + str(random.randint(1, 9))
 
@@ -123,13 +123,13 @@ def PlantTree(pX, pY):
 def IDToTexture(iID, iX, iY, iW = 48, iH = 48, bEQ = 0, buff = window): #Zamienia id na HANDLE textury
 	if iID == 7: #Plant
 		if not bEQ:
-			window.blit(pygame.transform.scale(blocks.getTexture(1), (iW, iH)), (iX, iY))
+			buff.blit(pygame.transform.scale(blocks.getTexture(1), (iW, iH)), (iX, iY))
 	elif iID == 5: #Leaves
-		window.blit(pygame.transform.scale(blocks.getTexture(5), (iW, iH)), (iX, iY))
+		buff.blit(pygame.transform.scale(blocks.getTexture(5), (iW, iH)), (iX, iY))
 	elif iID == 13: #Cactus
 		if not bEQ:
-			window.blit(pygame.transform.scale(blocks.getTexture(9), (iW, iH)), (iX, iY))
-	window.blit(pygame.transform.scale(blocks.getTexture(iID), (iW, iH)), (iX, iY))
+			buff.blit(pygame.transform.scale(blocks.getTexture(9), (iW, iH)), (iX, iY))
+	buff.blit(pygame.transform.scale(blocks.getTexture(iID), (iW, iH)), (iX, iY))
 
 def DrawInventory():#Funkcja rysowania ekwipunku
 	xOffset = math.floor((width - 397) / 2)
@@ -155,28 +155,26 @@ def DrawMap():#Funkcja rysowania mapy
 		print("")
 	'''
 	if oOffset['X'] or oOffset['Y']:
-		print('a')
-		window.blit(buffer, (oOffset['X'], oOffset['Y']))
+		window.blit(buffer, (oOffset['X'] - 48, oOffset['Y'] - 48))
 	else:
-		print('b')
 		leaves = []
 		buffer.fill((0, 0, 0, 0))
 		for iX in range(oPlayer['X'] - blocksxy[0] - 1, oPlayer['X'] + blocksxy[0] + 2):
 			for iY in range(oPlayer['Y'] - blocksxy[1] - 1, oPlayer['Y'] + blocksxy[1] + 2):
 				if iX < 0 or iX > iMapSize -1 or iY < 0 or iY > iMapSize - 1:
 					IDToTexture(0, #Txt bloku z mapy
-					((iX - (oPlayer['X'] - blocksxy[0])) * 48), #pozycja X rysowania w oknie
-					((iY - (oPlayer['Y'] - blocksxy[1])) * 48), buff=buffer) #pozycja Y rysowania w oknie
+					((iX - (oPlayer['X'] - blocksxy[0]) + 1) * 48), #pozycja X rysowania w oknie
+					((iY - (oPlayer['Y'] - blocksxy[1]) + 1) * 48), buff=buffer) #pozycja Y rysowania w oknie
 				elif aMap[iX][iY] == 5:
 					IDToTexture(1, #rysowanie ziemi
-					((iX - (oPlayer['X'] - blocksxy[0])) * 48), #pozycja X rysowania w oknie
-					((iY - (oPlayer['Y'] - blocksxy[1])) * 48) , buff=buffer) #pozycja Y rysowania w oknie
+					((iX - (oPlayer['X'] - blocksxy[0]) + 1) * 48), #pozycja X rysowania w oknie
+					((iY - (oPlayer['Y'] - blocksxy[1]) + 1) * 48) , buff=buffer) #pozycja Y rysowania w oknie
 					leaves.append((iX, iY))
 				else:
 					IDToTexture(aMap[iX][iY], #Txt bloku z mapy
-					((iX - (oPlayer['X'] - blocksxy[0])) * 48), #pozycja X rysowania w oknie
-					((iY - (oPlayer['Y'] - blocksxy[1])) * 48), buff=buffer) #pozycja Y rysowania w oknie
-		window.blit(buffer, (0, 0))
+					((iX - (oPlayer['X'] - blocksxy[0]) + 1) * 48), #pozycja X rysowania w oknie
+					((iY - (oPlayer['Y'] - blocksxy[1]) + 1) * 48), buff=buffer) #pozycja Y rysowania w oknie
+		window.blit(buffer, (-48, -48))
 	if playing == 2:
 		for iX in range(oPlayer['X'] - blocksxy[0], oPlayer['X'] + blocksxy[0] + 1):
 			for iY in range(oPlayer['Y'] - blocksxy[0], oPlayer['Y'] + blocksxy[1] + 1):
@@ -185,15 +183,15 @@ def DrawMap():#Funkcja rysowania mapy
 						window.blit(txt_player[player['Direction']], ((iX - oPlayer['X'] + blocksxy[0]) * 48 + oOffset['X'], (iY - oPlayer['Y'] + blocksxy[1]) * 48 + oOffset['Y'])) #postać
 	window.blit(txt_player[oPlayer['Direction']], (blocksxy[0] * 48, blocksxy[1] * 48)) #postać
 	if oOffset['X'] or oOffset['Y']:
-		window.blit(buffer2, (oOffset['X'], oOffset['Y']))
+		window.blit(buffer2, (oOffset['X'] - 48, oOffset['Y'] - 48))
 	else:
 		buffer2.fill((0, 0, 0, 0))
 		if len(leaves):
 			for leaf in leaves:
 				IDToTexture(5, #Rysowanie liści
-				((leaf[0] - (oPlayer['X'] - blocksxy[0])) * 48), #pozycja X rysowania w oknie
-				((leaf[1] - (oPlayer['Y'] - blocksxy[1])) * 48), buff=buffer2) #pozycja Y rysowania w oknie
-		window.blit(buffer2, (0, 0))
+				((leaf[0] - (oPlayer['X'] - blocksxy[0]) + 1) * 48), #pozycja X rysowania w oknie
+				((leaf[1] - (oPlayer['Y'] - blocksxy[1]) + 1) * 48), buff=buffer2) #pozycja Y rysowania w oknie
+		window.blit(buffer2, (-48, -48))
 			
 	if oDig['Dig'] != -1:
 		window.blit(txt_m_stage[oDig['Dig']],
@@ -394,6 +392,7 @@ active_menu = 0
 playing = False
 paused = False
 inventory = False
+iFullscreen = 0
 
 def switch_menu(menu):
 	global active_menu
@@ -605,19 +604,23 @@ theme = pygame_menu.themes.THEME_DEFAULT
 theme.menubar_close_button = False
 
 def fullscreen(full):
-	global width, height
-	window = pygame.display.set_mode((width, height), pygame.FULLSCREEN if full[0] == 'Yes' else 0)
+	global width, height, iFullscreen
+	iFullscreen = pygame.FULLSCREEN if full[0] == 'Yes' else 0
+	window = pygame.display.set_mode((width, height), iFullscreen)
 	
 def nickname(nickname):
 	global nick
 	nick = nickname
 	
 def resolution(res):
-	global width, height
+	global width, height, buffer, buffer2, blocksxy, iFullscreen
 	size = res[0].split('x')
 	width = int(size[0])
 	height = int(size[1])
-	window = pygame.display.set_mode((width, height))
+	window = pygame.display.set_mode((width, height), iFullscreen)
+	buffer = pygame.Surface((width + 96, height + 96)).convert_alpha()
+	buffer2 = pygame.Surface((width + 96, height + 96)).convert_alpha()
+	blocksxy = [math.floor(math.floor(width / 48) / 2), math.floor(math.floor(height / 48) / 2)]
 	generate_menus(res[0])
 
 menus = []
