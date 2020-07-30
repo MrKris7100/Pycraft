@@ -10,6 +10,7 @@ import os
 import threading
 from blocks import *
 from net import *
+from recipes import *
 pygame.init()
 
 width, height = 800, 600
@@ -96,7 +97,7 @@ def TimerDiff(hTimer):
 def BlockPlace(pX, pY, iID = -1): #Stawianie bloków
 	if iID != -1:
 		aMap[pX][pY] = iID
-	elif ItemBar[itemSelector][3][1] and not blocks.isMineable(aMap[pX][pY]) and blocks.isWalkable(aMap[pX][pY]):
+	elif ItemBar[itemSelector][3][1] and blocks.isPlaceable(ItemBar[itemSelector][3][0]) and not blocks.isMineable(aMap[pX][pY]) and blocks.isWalkable(aMap[pX][pY]):
 		if ItemBar[itemSelector][3][0] == 13 and aMap[pX][pY] != 9: return
 		if ItemBar[itemSelector][3][0] == 7 and aMap[pX][pY] != 1: return
 		if playing == 2:
@@ -130,6 +131,8 @@ def IDToTexture(iID, iX, iY, iW = 48, iH = 48, bEQ = 0, buff = window): #Zamieni
 		if not bEQ:
 			buff.blit(pygame.transform.scale(blocks.getTexture(9), (iW, iH)), (iX, iY))
 	buff.blit(pygame.transform.scale(blocks.getTexture(iID), (iW, iH)), (iX, iY))
+	if iID == 4: #Tree
+		buff.blit(pygame.transform.scale(blocks.getTexture(5), (iW, iH)), (iX, iY))
 
 def DrawInventory():#Funkcja rysowania ekwipunku
 	xOffset = math.floor((width - 490) / 2)
@@ -145,6 +148,9 @@ def DrawInventory():#Funkcja rysowania ekwipunku
 			if ItemBar[2 * iX + iY][4][1]:
 				IDToTexture(ItemBar[2 * iX + iY][4][0], 396 + (iX * 40 + iX) + xOffset, 18 + (iY * 40 + iY) + yOffset, 32, 32, 1)
 				DrawString(ItemBar[2 * iX + iY][4][1], 396 + (iX * 40 + iX) + xOffset, 18 + (iY * 40 + iY) + yOffset + 24, 12)
+	if ItemBar[0][5][1]:
+		IDToTexture(ItemBar[0][5][0], 416 + xOffset, 149 + yOffset, 32, 32, 1)
+		DrawString(ItemBar[0][5][1], 416 + xOffset, 149 + yOffset + 24, 12)
 	if itemPicked[0]:
 		tMouse = _Mouse()
 		IDToTexture(itemPicked[0], tMouse[0] - 16, tMouse[1] - 16, 32, 32, 1)
@@ -272,16 +278,20 @@ def MouseToInv():
 		for iX in range(2):
 			x = 394 + (iX * 40 + iX) + xOffset
 			y = 18 + (iY * 40 + iY) + yOffset
-			if tMouse[0] in range(x, x+ 32) and tMouse[1] in range(y + 32):
+			if tMouse[0] in range(x, x+ 32) and tMouse[1] in range(y, y + 32):
 				return (2 * iX + iY, 4)
+	if tMouse[0] in range(xOffset + 416, xOffset + 416 + 32):
+		if tMouse[1] in range(yOffset + 149, yOffset + 149 + 32):
+			return (0, 5)
 	return (-1, -1)
 
-patterns = [
-[[3],
- [3]],
- [[6]]
-]
-	
+def CraftItem():
+	for x in range(9):
+		if ItemBar[x][4][1]:
+			ItemBar[x][4][1] -= 1
+		if not ItemBar[x][4][1]:
+			ItemBar[x][4][0] = 0
+
 def InventoryControl(iButton):
 	global itemPicked
 	tMouse = MouseToInv()
@@ -291,52 +301,42 @@ def InventoryControl(iButton):
 				itemPicked[0] = ItemBar[tMouse[0]][tMouse[1]][0]
 				itemPicked[1] = ItemBar[tMouse[0]][tMouse[1]][1]
 				ItemBar[tMouse[0]][tMouse[1]][0], ItemBar[tMouse[0]][tMouse[1]][1] = 0, 0
+				if tMouse[1] == 5:
+					CraftItem()
 			else:
 				if not ItemBar[tMouse[0]][tMouse[1]][0]:
-					ItemBar[tMouse[0]][tMouse[1]][0] = itemPicked[0]
-					ItemBar[tMouse[0]][tMouse[1]][1] = itemPicked[1]
-					itemPicked[0], itemPicked[1] = 0, 0
+					if tMouse[1] != 5:
+						ItemBar[tMouse[0]][tMouse[1]][0] = itemPicked[0]
+						ItemBar[tMouse[0]][tMouse[1]][1] = itemPicked[1]
+						itemPicked[0], itemPicked[1] = 0, 0
 				elif ItemBar[tMouse[0]][tMouse[1]][0] == itemPicked[0]:
-					ItemBar[tMouse[0]][tMouse[1]][1] += itemPicked[1]
-					itemPicked[0], itemPicked[1] = 0, 0
+					if tMouse[1] != 5:
+						ItemBar[tMouse[0]][tMouse[1]][1] += itemPicked[1]
+						itemPicked[0], itemPicked[1] = 0, 0
 				else:
-					swap = [ItemBar[tMouse[0]][tMouse[1]][0], ItemBar[tMouse[0]][tMouse[1]][1]]
-					ItemBar[tMouse[0]][tMouse[1]][0] = itemPicked[0]
-					ItemBar[tMouse[0]][tMouse[1]][1] = itemPicked[1]
-					itemPicked = [swap[0], swap[1]]
+					if tMouse[1] != 5:
+						swap = [ItemBar[tMouse[0]][tMouse[1]][0], ItemBar[tMouse[0]][tMouse[1]][1]]
+						ItemBar[tMouse[0]][tMouse[1]][0] = itemPicked[0]
+						ItemBar[tMouse[0]][tMouse[1]][1] = itemPicked[1]
+						itemPicked = [swap[0], swap[1]]
 		elif iButton == 3:
-			if not itemPicked[0]:
-				itemPicked[0] = ItemBar[tMouse[0]][tMouse[1]][0]
-				itemPicked[1] = math.ceil(ItemBar[tMouse[0]][tMouse[1]][1] / 2)
-				ItemBar[tMouse[0]][tMouse[1]][1] -= math.ceil(ItemBar[tMouse[0]][tMouse[1]][1] / 2)
+			if not itemPicked[0] or tMouse[1] == 5:
+				if not itemPicked[0]: 
+					itemPicked[0] = ItemBar[tMouse[0]][tMouse[1]][0]
+				itemPicked[1] += ItemBar[tMouse[0]][tMouse[1]][1] if tMouse[1] == 5 else math.ceil(ItemBar[tMouse[0]][tMouse[1]][1] / 2)
+				ItemBar[tMouse[0]][tMouse[1]][1] -= ItemBar[tMouse[0]][tMouse[1]][1] if tMouse[1] == 5 else math.ceil(ItemBar[tMouse[0]][tMouse[1]][1] / 2)
+				if tMouse[1] == 5:
+					CraftItem()
 			else:
 				if not ItemBar[tMouse[0]][tMouse[1]][0]:
-					ItemBar[tMouse[0]][tMouse[1]][0] == itemPicked[0]
+					ItemBar[tMouse[0]][tMouse[1]][0] = itemPicked[0]
 				if ItemBar[tMouse[0]][tMouse[1]][0] == itemPicked[0]:
 					ItemBar[tMouse[0]][tMouse[1]][1] += 1
 					itemPicked[1] -= 1
 		if tMouse[1] == 4:
-			for pattern in patterns:
-				for iX in range(2 // len(pattern)):
-					for iY in range(2 // len(pattern[0])):
-						empty = 0
-						match = 0
-						ingredients = 0
-						for pY in range(len(pattern[0])):
-							for pX in range(len(pattern)):
-								if pattern[pX][pY] != 0:
-									ingredients +=1
-						for pY in range(len(pattern[0])):
-							for pX in range(len(pattern)):
-								if ItemBar[2 * (pY + iY) + pX + iX][4][0] == pattern[pX][pY]:
-									match += 1
-						for pX in range(2):
-							for pY in range(2):
-								if ItemBar[2 * pX + pY][4][0] == 0:
-									empty += 1
-						if match == ingredients and empty == 4 - ingredients:
-							print('Match!', pattern)
-							
+			craft = recipes.Match([ItemBar[x][4] for x in range(9)])
+			ItemBar[0][5][0] = craft[0]
+			ItemBar[0][5][1] = craft[1]
 					
 	if ItemBar[tMouse[0]][tMouse[1]][1] == 0:
 		ItemBar[tMouse[0]][tMouse[1]][0] = 0
@@ -615,7 +615,7 @@ def create_world():
 	if not name:
 		name = 'world' + str(random.randint(0, 9999))
 	generate_map(size)
-	world = {'map' : aMap, 'mapBack' : aMapBack, 'eq' : [[[random.randint(1, 13) for e in range(2)] for x in range(5)] for y in range(9)], 'player' : {'X' : random.randint(1, size - 1), 'Y' : random.randint(1, size - 1), 'Direction' : 2}}
+	world = {'map' : aMap, 'mapBack' : aMapBack, 'eq' : [[[0 for e in range(2)] for x in range(6)] for y in range(9)], 'player' : {'X' : random.randint(1, size - 1), 'Y' : random.randint(1, size - 1), 'Direction' : 2}}
 	if os.path.isfile('./worlds/' + name):
 		count = 1
 		while os.path.isfile('./worlds/' + name + str(count)):
@@ -624,7 +624,7 @@ def create_world():
 	file = open('./worlds/' + name, 'w')
 	file.write(json.dumps(world))
 	world_selector.update_elements(worlds_list())
-	#world_selector.set_value(name)
+	world_selector.set_value(name)
 	active_menu = 1
 	
 def save_game():
@@ -734,7 +734,7 @@ while True:
 		elif event.type == pygame.KEYUP:
 			key = None
 		elif event.type == pygame.KEYDOWN:
-			if event.key == pygame.K_ESCAPE:
+			if event.key == pygame.K_ESCAPE and playing:
 				if inventory:
 					inventory = False
 				else:
@@ -748,14 +748,14 @@ while True:
 			else:
 				key = event.key
 		elif event.type == pygame.MOUSEBUTTONUP:
-			if inventory:
+			if inventory and playing:
 				InventoryControl(event.button)
 			button = 0
 		elif event.type == pygame.MOUSEBUTTONDOWN:
 			if (event.button == 4 or event.button == 5) and playing:
 				itemSelector += 1 if event.button == 4 else -1
 				if itemSelector == 9: itemSelector = 0
-				if itemSelector == -1: itemSelector = 9
+				if itemSelector == -1: itemSelector = 8
 			else:
 				button = event.button
 			

@@ -42,7 +42,7 @@ blocks.addBlock('Bedrock',			False,		True,		False,		0,			BLOCKS + 'bedrock.png')
 blocks.addBlock('Dirt background',	False,		False,		True,		0,			BLOCKS + 'dirt_b.png') 	#1
 blocks.addBlock('Dirt',				True,		True,		False,		150,		BLOCKS + 'dirt.png') 	#2
 blocks.addBlock('Wooden planks',	True,		True,		False,		250,		BLOCKS + 'wood.png')	#3
-blocks.addBlock('Tree',				True,		True,		False,		250,		BLOCKS + 'tree.png')	#4
+blocks.addBlock('Tree',				True,		True,		False,		250,		BLOCKS + 'log.png')		#4
 blocks.addBlock('Leaves',			True,		True,		True,		100,		BLOCKS + 'leaves.png')	#5
 blocks.addBlock('Log',				True,		True,		False,		250,		BLOCKS + 'log.png')		#6
 blocks.addBlock('Tree sapling',		True,		True,		True,		0,			BLOCKS + 'sapling.png')	#7
@@ -52,3 +52,4 @@ blocks.addBlock('Sand',				True,		True,		False,		150,		BLOCKS + 'sand.png')	#10
 blocks.addBlock('Stone background',	False,		False,		True,		0,			BLOCKS + 'stone_b.png')	#11
 blocks.addBlock('Stone',			True,		True,		False,		500,		BLOCKS + 'stone.png')	#12
 blocks.addBlock('Cactus',			True,		True,		False,		150,		BLOCKS + 'cactus.png')	#13
+blocks.addBlock('Stick',			False,		False,		False,		0,			BLOCKS + 'stick.png')	#14
