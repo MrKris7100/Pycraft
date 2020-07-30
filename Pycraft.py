@@ -142,9 +142,9 @@ def DrawInventory():#Funkcja rysowania ekwipunku
 				DrawString(ItemBar[iX][iY][1], 18 + (iX * 40 + iX) + xOffset, 18 + (iY * 40 + iY) + yOffset + 24 + (10 if iY == 3 else 0), 12)
 	for iY in range(2):
 		for iX in range(2):
-			if ItemBar[2 * iY + iX][4][1]:
-				IDToTexture(ItemBar[2 * iY + iX][4][0], 396 + (iX * 40 + iX) + xOffset, 18 + (iY * 40 + iY) + yOffset, 32, 32, 1)
-				DrawString(ItemBar[2 * iY + iX][4][1], 396 + (iX * 40 + iX) + xOffset, 18 + (iY * 40 + iY) + yOffset + 24, 12)
+			if ItemBar[2 * iX + iY][4][1]:
+				IDToTexture(ItemBar[2 * iX + iY][4][0], 396 + (iX * 40 + iX) + xOffset, 18 + (iY * 40 + iY) + yOffset, 32, 32, 1)
+				DrawString(ItemBar[2 * iX + iY][4][1], 396 + (iX * 40 + iX) + xOffset, 18 + (iY * 40 + iY) + yOffset + 24, 12)
 	if itemPicked[0]:
 		tMouse = _Mouse()
 		IDToTexture(itemPicked[0], tMouse[0] - 16, tMouse[1] - 16, 32, 32, 1)
@@ -273,9 +273,15 @@ def MouseToInv():
 			x = 394 + (iX * 40 + iX) + xOffset
 			y = 18 + (iY * 40 + iY) + yOffset
 			if tMouse[0] in range(x, x+ 32) and tMouse[1] in range(y + 32):
-				return (2 * iY + iX, 4)
+				return (2 * iX + iY, 4)
 	return (-1, -1)
 
+patterns = [
+[[3],
+ [3]],
+ [[6]]
+]
+	
 def InventoryControl(iButton):
 	global itemPicked
 	tMouse = MouseToInv()
@@ -309,6 +315,28 @@ def InventoryControl(iButton):
 				if ItemBar[tMouse[0]][tMouse[1]][0] == itemPicked[0]:
 					ItemBar[tMouse[0]][tMouse[1]][1] += 1
 					itemPicked[1] -= 1
+		if tMouse[1] == 4:
+			for pattern in patterns:
+				for iX in range(2 // len(pattern)):
+					for iY in range(2 // len(pattern[0])):
+						empty = 0
+						match = 0
+						ingredients = 0
+						for pY in range(len(pattern[0])):
+							for pX in range(len(pattern)):
+								if pattern[pX][pY] != 0:
+									ingredients +=1
+						for pY in range(len(pattern[0])):
+							for pX in range(len(pattern)):
+								if ItemBar[2 * (pY + iY) + pX + iX][4][0] == pattern[pX][pY]:
+									match += 1
+						for pX in range(2):
+							for pY in range(2):
+								if ItemBar[2 * pX + pY][4][0] == 0:
+									empty += 1
+						if match == ingredients and empty == 4 - ingredients:
+							print('Match!', pattern)
+							
 					
 	if ItemBar[tMouse[0]][tMouse[1]][1] == 0:
 		ItemBar[tMouse[0]][tMouse[1]][0] = 0
