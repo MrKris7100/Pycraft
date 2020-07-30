@@ -172,19 +172,16 @@ def DrawMap():#Funkcja rysowania mapy
 		buffer.fill((0, 0, 0, 0))
 		for iX in range(oPlayer['X'] - blocksxy[0] - 1, oPlayer['X'] + blocksxy[0] + 2):
 			for iY in range(oPlayer['Y'] - blocksxy[1] - 1, oPlayer['Y'] + blocksxy[1] + 2):
-				if iX < 0 or iX > iMapSize -1 or iY < 0 or iY > iMapSize - 1:
-					IDToTexture(0, #Txt bloku z mapy
-					((iX - (oPlayer['X'] - blocksxy[0]) + 1) * 48), #pozycja X rysowania w oknie
-					((iY - (oPlayer['Y'] - blocksxy[1]) + 1) * 48), buff=buffer) #pozycja Y rysowania w oknie
-				elif aMap[iX][iY] == 5:
-					IDToTexture(1, #rysowanie ziemi
-					((iX - (oPlayer['X'] - blocksxy[0]) + 1) * 48), #pozycja X rysowania w oknie
-					((iY - (oPlayer['Y'] - blocksxy[1]) + 1) * 48) , buff=buffer) #pozycja Y rysowania w oknie
-					leaves.append((iX, iY))
-				else:
-					IDToTexture(aMap[iX][iY], #Txt bloku z mapy
-					((iX - (oPlayer['X'] - blocksxy[0]) + 1) * 48), #pozycja X rysowania w oknie
-					((iY - (oPlayer['Y'] - blocksxy[1]) + 1) * 48), buff=buffer) #pozycja Y rysowania w oknie
+				if iX > -1 and iX < iMapSize + 1 and iY > -1 and iY < iMapSize + 1:
+					if aMap[iX][iY] == 5:
+						IDToTexture(1, #rysowanie ziemi
+						((iX - (oPlayer['X'] - blocksxy[0]) + 1) * 48), #pozycja X rysowania w oknie
+						((iY - (oPlayer['Y'] - blocksxy[1]) + 1) * 48) , buff=buffer) #pozycja Y rysowania w oknie
+						leaves.append((iX, iY))
+					else:
+						IDToTexture(aMap[iX][iY], #Txt bloku z mapy
+						((iX - (oPlayer['X'] - blocksxy[0]) + 1) * 48), #pozycja X rysowania w oknie
+						((iY - (oPlayer['Y'] - blocksxy[1]) + 1) * 48), buff=buffer) #pozycja Y rysowania w oknie
 		window.blit(buffer, (-48, -48))
 	if playing == 2:
 		for iX in range(oPlayer['X'] - blocksxy[0], oPlayer['X'] + blocksxy[0] + 1):
@@ -352,6 +349,7 @@ def MouseToBlock():
 	
 def BlockDig(pX, pY): #Kopanie bloków
 	global tMouseInterval
+	pickTimes = [150, 225, 300, 325, 450]
 	if blocks.isMineable(aMap[pX][pY]):
 		#Pre switch dla kilofów
 
@@ -364,7 +362,7 @@ def BlockDig(pX, pY): #Kopanie bloków
 			return
 		else:
 			if pX == oDig['X'] and pY == oDig['Y'] and not iDeveloper:
-				if TimerDiff(tMouseInterval) >= blocks.getDigtime(aMap[pX][pY]):
+				if TimerDiff(tMouseInterval) >= blocks.getDigtime(aMap[pX][pY]) - (pickTimes[ItemBar[itemSelector][3][0] - 19] if ItemBar[itemSelector][3][0] in range(16, 20) else 0):
 					tMouseInterval = TimerInit()
 					oDig['Dig'] += 1
 			else:
@@ -390,21 +388,26 @@ def BlockAddEq(iID, pX, pY): #Dodawanie bloku do ekwipunku
 		sID = 7
 		iCount = random.randint(0, 1)
 	elif iID == 7:
-		sId = 7
+		sID = 7
 		iCount = 1
 		#TreeDelete(pX, pY)
+	elif iID == 12: #Stone > cobbles
+		sID = 20
+		if ItemBar[itemSelector][3][0] not in range(16, 20):
+			iCount = 0
 	if iCount == 0: return 1
 	for iC2 in [3, 0, 1, 2]:
 		for iC in range(9):
-			if ItemBar[iC][iC2][0] == 0 or ItemBar[iC][iC2][0] == sID:
+			if ItemBar[iC][iC2][0] == 0 or (ItemBar[iC][iC2][0] == sID and ItemBar[iC][iC2][1] < blocks.getStack(sID)):
 				iSelector = [iC, iC2]
 				break
 		else:
 			continue
 		break
 	if iSelector[0] != -1 and iSelector[1] != -1:
-		ItemBar[iSelector[0]][iSelector[1]][0] = sID
-		ItemBar[iSelector[0]][iSelector[1]][1] += iCount
+		if iCount:
+			ItemBar[iSelector[0]][iSelector[1]][0] = sID
+			ItemBar[iSelector[0]][iSelector[1]][1] += iCount
 		return 1
 	return 0
 	
