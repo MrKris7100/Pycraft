@@ -29,7 +29,7 @@ class Recipes():
 					match = 0
 					for pY in range(recipe.size[1]):
 						for pX in range(recipe.size[0]):
-							if compare[2 * (pY + iY) + pX + iX][0] == recipe.pattern[pX][pY]:
+							if compare[size * (pY + iY) + pX + iX][0] == recipe.pattern[pX][pY]:
 								match += 1
 					empty = sum(x.count(0) for x in compare) // 2
 					if size == 2:
@@ -41,6 +41,8 @@ class Recipes():
 recipes = Recipes()
 
 ################# Row 1		Row 2		Row 3		Result	Amount		#Recipe
-recipes.addRecipe([6], 		False, 		False, 		3,		4)			#Log -> 4 Wooden planks
-recipes.addRecipe([3], 		[3], 		False, 		14,		4)			#2 Wooden planks -> 4 Sticks
+recipes.addRecipe([6], 		False, 		False, 		3,		4)			#4 Wooden planks
+recipes.addRecipe([3], 		[3], 		False, 		14,		4)			#4 Sticks
+recipes.addRecipe([3, 3], 	[3, 3], 	False, 		21,		1)			#Crafting table
+recipes.addRecipe([3, 3, 3],[0, 14, 0], [0, 14, 0], 21,		1)			#Wooden pickaxe
 			
