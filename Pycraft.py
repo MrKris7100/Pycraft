@@ -40,7 +40,7 @@ b_Map = 0 # Mapa (ziemia/jaskinia
 aTrees = [] # Tablica drzew (mechanizm rozrostu)
 itemPicked = [0, 0]
 itemCrafted = [0, 0]
-itemCrafting2 = [[[0 for e in range(2)] for x in range(2)] for y in range(2)]
+itemCrafting = [[[0 for e in range(2)] for x in range(3)] for y in range(3)] #3x3 Grid
 ################### STRUCTY
 oDig = {'Dig' : -1, 'X' : -1, 'Y' : -1}
 ItemBar = []
@@ -156,12 +156,12 @@ def DrawInventory():#Funkcja rysowania ekwipunku
 	if crafting: size = 3
 	for iY in range(size):
 		for iX in range(size):
-			if ItemBar[size * iX + iY][4][1]:
-				IDToTexture(ItemBar[size * iX + iY][4][0], 406 - (18 if crafting else 0) + (iX * 40 + iX) + xOffset, 38 - (20 if crafting else 0) + (iY * 40 + iY) + yOffset, 32, 32, 1)
-				DrawString(ItemBar[size * iX + iY][4][1], 406 - (18 if crafting else 0) + (iX * 40 + iX) + xOffset, 38 - (20 if crafting else 0) + (iY * 40 + iY) + yOffset + 24, 12)
-	if ItemBar[0][5][1]:
-		IDToTexture(ItemBar[0][5][0], 428 + xOffset, 170 + (20 if crafting else 0) + yOffset, 32, 32, 1)
-		DrawString(ItemBar[0][5][1], 428 + xOffset, 170 + (20 if crafting else 0) + + yOffset + 24, 12)
+			if itemCrafting[iX][iY][0]:
+				IDToTexture(itemCrafting[iX][iY][0], 406 - (18 if crafting else 0) + (iX * 40 + iX) + xOffset, 38 - (20 if crafting else 0) + (iY * 40 + iY) + yOffset, 32, 32, 1)
+				DrawString(itemCrafting[iX][iY][1], 406 - (18 if crafting else 0) + (iX * 40 + iX) + xOffset, 38 - (20 if crafting else 0) + (iY * 40 + iY) + yOffset + 24, 12)
+	if itemCrafted[0]:
+		IDToTexture(itemCrafted[0], 428 + xOffset, 170 + (20 if crafting else 0) + yOffset, 32, 32, 1)
+		DrawString(itemCrafted[1], 428 + xOffset, 170 + (20 if crafting else 0) + + yOffset + 24, 12)
 	if itemPicked[0]:
 		tMouse = _Mouse()
 		IDToTexture(itemPicked[0], tMouse[0] - 16, tMouse[1] - 16, 32, 32, 1)
@@ -289,78 +289,81 @@ def MouseToInv():
 			x = 406 - (18 if crafting else 0) + (iX * 40 + iX) + xOffset
 			y = 38 - (20 if crafting else 0) + (iY * 40 + iY) + yOffset
 			if tMouse[0] in range(x, x+ 32) and tMouse[1] in range(y, y + 32):
-				return (size * iX + iY, 4)
+				return ((iX + 1) * 10, (iY + 1) * 10)
 	if tMouse[0] in range(xOffset + 428, xOffset + 428 + 32):
 		if tMouse[1] in range(yOffset + 170 + (20 if crafting else 0), yOffset + 170 + (20 if crafting else 0) + 32):
 			return (0, 5)
 	return (-1, -1)
 
 def CraftItem():
-	for x in range(9):
-		if ItemBar[x][4][1]:
-			ItemBar[x][4][1] -= 1
-		if not ItemBar[x][4][1]:
-			ItemBar[x][4][0] = 0
-	craft = recipes.Match([ItemBar[x][4] for x in range(9)])
-	ItemBar[0][5][0] = craft[0]
-	ItemBar[0][5][1] = craft[1]
+	for x in range(3):
+		for y in range(3):
+			if itemCrafting[x][y][1]:
+				itemCrafting[x][y][1] -= 1
+			if not itemCrafting[x][y][1]:
+				itemCrafting[x][y][0] = 0
+	itemCrafted = recipes.Match(itemCrafting)
 
 def InventoryControl(iButton):
-	global itemPicked
+	global itemPicked, itemCrafted
 	tMouse = MouseToInv()
 	if tMouse[0] != -1 and tMouse[1] != -1:
+		if tMouse[0] >= 10:
+			pick = itemCrafting[tMouse[0] // 10 - 1][tMouse[1] // 10 - 1]
+		else:
+			pick = ItemBar[tMouse[0]][tMouse[1]]
 		if iButton == 1:
 			if not itemPicked[0]:
-				itemPicked[0] = ItemBar[tMouse[0]][tMouse[1]][0]
-				itemPicked[1] = ItemBar[tMouse[0]][tMouse[1]][1]
-				ItemBar[tMouse[0]][tMouse[1]][0], ItemBar[tMouse[0]][tMouse[1]][1] = 0, 0
 				if tMouse[1] == 5:
 					CraftItem()
+					pick = itemCrafted
+				itemPicked[0] = pick[0]
+				itemPicked[1] = pick[1]
+				pick[0], pick[1] = 0, 0
 			else:
-				if not ItemBar[tMouse[0]][tMouse[1]][0]:
+				if not pick[0]:
 					if tMouse[1] != 5:
-						ItemBar[tMouse[0]][tMouse[1]][0] = itemPicked[0]
-						ItemBar[tMouse[0]][tMouse[1]][1] = itemPicked[1]
-						itemPicked[0], itemPicked[1] = 0, 0
-				elif ItemBar[tMouse[0]][tMouse[1]][0] == itemPicked[0]:
+						pick[0] = itemPicked[0]
+						pick[1] = itemPicked[1]
+						itemPicked = [0, 0]
+				elif pick[0] == itemPicked[0]:
 					if tMouse[1] != 5:
-						ItemBar[tMouse[0]][tMouse[1]][1] += itemPicked[1]
-						itemPicked[0], itemPicked[1] = 0, 0
+						pick[1] += itemPicked[1]
+						itemPicked = [0, 0]
 				else:
 					if tMouse[1] != 5:
-						swap = [ItemBar[tMouse[0]][tMouse[1]][0], ItemBar[tMouse[0]][tMouse[1]][1]]
-						ItemBar[tMouse[0]][tMouse[1]][0] = itemPicked[0]
-						ItemBar[tMouse[0]][tMouse[1]][1] = itemPicked[1]
-						itemPicked = [swap[0], swap[1]]
+						swap = pick
+						pick[0], pick[1] = itemPicked[0], itemPicked[1]
+						itemPicked = swap
 		elif iButton == 3:
 			if not itemPicked[0] or tMouse[1] == 5:
-				if not itemPicked[0]: 
-					itemPicked[0] = ItemBar[tMouse[0]][tMouse[1]][0]
-				itemPicked[1] += ItemBar[tMouse[0]][tMouse[1]][1] if tMouse[1] == 5 else math.ceil(ItemBar[tMouse[0]][tMouse[1]][1] / 2)
-				ItemBar[tMouse[0]][tMouse[1]][1] -= ItemBar[tMouse[0]][tMouse[1]][1] if tMouse[1] == 5 else math.ceil(ItemBar[tMouse[0]][tMouse[1]][1] / 2)
 				if tMouse[1] == 5:
 					CraftItem()
+					pick = itemCrafted
+				if not itemPicked[0]: 
+					itemPicked[0] = pick[0]
+				itemPicked[1] += pick[1] if tMouse[1] == 5 else math.ceil(pick[1] / 2)
+				pick[1] -= pick[1] if tMouse[1] == 5 else math.ceil(pick[1] / 2)
 			else:
-				if not ItemBar[tMouse[0]][tMouse[1]][0]:
-					ItemBar[tMouse[0]][tMouse[1]][0] = itemPicked[0]
-				if ItemBar[tMouse[0]][tMouse[1]][0] == itemPicked[0]:
-					ItemBar[tMouse[0]][tMouse[1]][1] += 1
+				if not pick[0]:
+					pick[0] = itemPicked[0]
+				if pick[0] == itemPicked[0]:
+					pick[1] += 1
 					itemPicked[1] -= 1
-		if tMouse[1] == 4:
-			craft = recipes.Match([ItemBar[x][4] for x in range(9)])
-			ItemBar[0][5][0] = craft[0]
-			ItemBar[0][5][1] = craft[1]
-					
-	if ItemBar[tMouse[0]][tMouse[1]][1] == 0:
-		ItemBar[tMouse[0]][tMouse[1]][0] = 0
-	if not itemPicked[1]:
-		itemPicked[0] = 0
+		if tMouse[0] >= 10:
+			itemCrafted = recipes.Match(itemCrafting)
+		if pick[1] == 0:
+			pick[0] = 0
+		if not itemPicked[1]:
+			itemPicked[0] = 0
 		
 
 def MouseToBlock():
 	tMouse = _Mouse()
 	tMouse[0] = math.floor(tMouse[0] / 48) + oPlayer['X'] - blocksxy[0]
 	tMouse[1] = math.floor(tMouse[1] / 48) + oPlayer['Y'] - blocksxy[1]
+	if tMouse[0] < 0 or tMouse[0] > iMapSize or tMouse[1] < 0 or tMouse[1] > iMapSize:
+		return [-1, -1]
 	return tMouse
 	
 def BlockDig(pX, pY): #Kopanie bloków
@@ -428,14 +431,16 @@ def BlockAddEq(iID, pX, pY): #Dodawanie bloku do ekwipunku
 	return 0
 	
 def MouseControl(iButton):
-	oMouse = MouseToBlock()
-	if iButton == 1:
-		BlockDig(oMouse[0], oMouse[1])
-	elif iButton == 3:
-		BlockPlace(oMouse[0], oMouse[1])
-	else:
-		if oDig['Dig'] != -1:
-			oDig['Dig'] = -1
+	tMouse = MouseToBlock()
+	if tMouse[0] != -1 and tMouse[1] != -1:
+		if iButton == 1:
+			BlockDig(tMouse[0], tMouse[1])
+			return
+		elif iButton == 3:
+			BlockPlace(tMouse[0], tMouse[1])
+			return
+	if oDig['Dig'] != -1:
+		oDig['Dig'] = -1
 
 def DrawString(text, x, y, size = 50, color = (255, 255, 255)):
 	text = str(text)

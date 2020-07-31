@@ -1,3 +1,5 @@
+import math
+
 class Recipes():
 	class Recipe():
 		def __init__(self, pattern_row1, pattern_row2, pattern_row3, result, amount):
@@ -8,8 +10,8 @@ class Recipes():
 			self.result = result
 			self.amount = amount
 			self.ingredients = 0
-			for pY in range(len(self.pattern[0])):
-				for pX in range(len(self.pattern)):
+			for pY in range(self.size[1]):
+				for pX in range(self.size[0]):
 					if self.pattern[pX][pY] != 0:
 						self.ingredients +=1
 		
@@ -20,29 +22,29 @@ class Recipes():
 		self.recipes.append(self.Recipe(pattern_row1, pattern_row2, pattern_row3, result, amount))
 	
 	def Match(self, compare):
-		size = 2
-		for i in range(6, 8):
-			if compare[i][0]: size = 3
 		for recipe in self.recipes:
-			for iX in range(size // recipe.size[0]):
-				for iY in range(size // recipe.size[1]):
+			for iX in range(math.ceil(3 / recipe.size[1])):
+				for iY in range(math.ceil(3 / recipe.size[0])):
 					match = 0
-					for pY in range(recipe.size[1]):
-						for pX in range(recipe.size[0]):
-							if compare[size * (pY + iY) + pX + iX][0] == recipe.pattern[pX][pY]:
+					for pY in range(recipe.size[0]):
+						for pX in range(recipe.size[1]):
+							if compare[pX + iX][pY + iY][0] and compare[pX + iX][pY + iY][0] == recipe.pattern[pY][pX]:
 								match += 1
-					empty = sum(x.count(0) for x in compare) // 2
-					if size == 2:
-						empty -= 5
-					if match == recipe.ingredients and empty == size ** 2 - recipe.ingredients:
-						return (recipe.result, recipe.amount)
-		return (0, 0)		
+					empty = 0
+					for pX in range(3):
+						for pY in range(3):
+							if compare[pX][pY][0] == 0:
+								empty += 1
+					if match == recipe.ingredients and empty == 3 ** 2 - recipe.ingredients:
+						return [recipe.result, recipe.amount]
+		return [0, 0]		
 							
 recipes = Recipes()
 
-################# Row 1		Row 2		Row 3		Result	Amount		#Recipe
-recipes.addRecipe([6], 		False, 		False, 		3,		4)			#4 Wooden planks
-recipes.addRecipe([3], 		[3], 		False, 		14,		4)			#4 Sticks
-recipes.addRecipe([3, 3], 	[3, 3], 	False, 		21,		1)			#Crafting table
-recipes.addRecipe([3, 3, 3],[0, 14, 0], [0, 14, 0], 21,		1)			#Wooden pickaxe
+################# Row 1			Row 2			Row 3		Result	Amount		#Recipe
+recipes.addRecipe([6], 			False, 			False, 		3,		4)			#4 Wooden planks
+recipes.addRecipe([3], 			[3], 			False, 		14,		4)			#4 Sticks
+recipes.addRecipe([3, 3], 		[3, 3], 		False, 		21,		1)			#Crafting table
+recipes.addRecipe([3, 3, 3],	[0, 14, 0],		[0, 14, 0], 15,		1)			#Wooden pickaxe
+recipes.addRecipe([20, 20, 20],	[0, 14, 0], 	[0, 14, 0], 16,		1)			#Stone pickaxe
 			
