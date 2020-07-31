@@ -8,6 +8,7 @@ import json
 import pygame_menu
 import os
 import threading
+from sys import exit
 from blocks import *
 from net import *
 from recipes import *
@@ -733,7 +734,7 @@ while True:
 		if event.type == pygame.QUIT:
 			if playing == 2: disconnect()
 			pygame.quit()
-			quit()
+			exit()
 		elif event.type == pygame.KEYUP:
 			key = None
 		elif event.type == pygame.KEYDOWN:
