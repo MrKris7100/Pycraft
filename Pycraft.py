@@ -127,7 +127,11 @@ def PlantTree(pX, pY):
 	MakePoint(pX, pY, 1, 5) # Leaves
 	BlockPlace(pX, pY, 4) # Tree
 #####################################################
-def IDToTexture(iID, iX, iY, iW = 48, iH = 48, bEQ = 0, buff = window): #Zamienia id na HANDLE textury
+def IDToTexture(iID, iX, iY, iW = 48, iH = 48, bEQ = 0, buff = window, angle = 0): #Zamienia id na HANDLE textury
+	txt = blocks.getTexture(iID)
+	txt = pygame.transform.scale(txt, (iW, iH))
+	if angle:
+		txt = pygame.transform.rotate(txt, angle)
 	if iID == 7: #Plant
 		if not bEQ:
 			buff.blit(pygame.transform.scale(blocks.getTexture(1), (iW, iH)), (iX, iY))
@@ -136,9 +140,9 @@ def IDToTexture(iID, iX, iY, iW = 48, iH = 48, bEQ = 0, buff = window): #Zamieni
 	elif iID == 13: #Cactus
 		if not bEQ:
 			buff.blit(pygame.transform.scale(blocks.getTexture(9), (iW, iH)), (iX, iY))
-	buff.blit(pygame.transform.scale(blocks.getTexture(iID), (iW, iH)), (iX, iY))
-	if iID == 4: #Tree
-		buff.blit(pygame.transform.scale(blocks.getTexture(5), (iW, iH)), (iX, iY))
+	buff.blit(txt, (iX, iY))
+	if iID == 4:
+		buff.blit(blocks.getTexture(5), (iX, iY))
 
 def DrawInventory():#Funkcja rysowania ekwipunku
 	xOffset = math.floor((width - 520) / 2)
@@ -184,15 +188,21 @@ def DrawMap():#Funkcja rysowania mapy
 		for iX in range(oPlayer['X'] - blocksxy[0] - 1, oPlayer['X'] + blocksxy[0] + 2):
 			for iY in range(oPlayer['Y'] - blocksxy[1] - 1, oPlayer['Y'] + blocksxy[1] + 2):
 				if iX > -1 and iX < iMapSize and iY > -1 and iY < iMapSize:
-					if aMap[iX][iY] == 5:
-						IDToTexture(1, #rysowanie ziemi
-						((iX - (oPlayer['X'] - blocksxy[0]) + 1) * 48), #pozycja X rysowania w oknie
-						((iY - (oPlayer['Y'] - blocksxy[1]) + 1) * 48) , buff=buffer) #pozycja Y rysowania w oknie
+					pX = (iX - (oPlayer['X'] - blocksxy[0]) + 1) * 48
+					pY = (iY - (oPlayer['Y'] - blocksxy[1]) + 1) * 48
+					if aMap[iX][iY] == 5: #Liście
+						IDToTexture(aMapBack[iX][iY], pX, pY, buff=buffer)
 						leaves.append((iX, iY))
+					elif aMap[iX][iY] == 22: #Płotek
+						IDToTexture(aMapBack[iX][iY], pX, pY, buff=buffer)
+						IDToTexture(aMap[iX][iY], pX, pY, buff=buffer)
+						if iX != 0 and iX != iMapSize - 1 and iY != 0 and iY != iMapSize - 1:
+							if not blocks.isWalkable(aMap[iX][iY - 1]): IDToTexture(23, pX, pY, buff=buffer)
+							if not blocks.isWalkable(aMap[iX][iY + 1]): IDToTexture(23, pX, pY, buff=buffer, angle=180)
+							if not blocks.isWalkable(aMap[iX - 1][iY]): IDToTexture(23, pX, pY, buff=buffer, angle=90)
+							if not blocks.isWalkable(aMap[iX + 1][iY]): IDToTexture(23, pX, pY, buff=buffer, angle=-90)
 					else:
-						IDToTexture(aMap[iX][iY], #Txt bloku z mapy
-						((iX - (oPlayer['X'] - blocksxy[0]) + 1) * 48), #pozycja X rysowania w oknie
-						((iY - (oPlayer['Y'] - blocksxy[1]) + 1) * 48), buff=buffer) #pozycja Y rysowania w oknie
+						IDToTexture(aMap[iX][iY], (iX - (oPlayer['X'] - blocksxy[0]) + 1) * 48, (iY - (oPlayer['Y'] - blocksxy[1]) + 1) * 48, buff=buffer)
 		window.blit(buffer, (-48, -48))
 	if playing == 2:
 		for iX in range(oPlayer['X'] - blocksxy[0], oPlayer['X'] + blocksxy[0] + 1):
@@ -296,6 +306,7 @@ def MouseToInv():
 	return (-1, -1)
 
 def CraftItem():
+	global itemCrafted
 	for x in range(3):
 		for y in range(3):
 			if itemCrafting[x][y][1]:
@@ -310,16 +321,17 @@ def InventoryControl(iButton):
 	if tMouse[0] != -1 and tMouse[1] != -1:
 		if tMouse[0] >= 10:
 			pick = itemCrafting[tMouse[0] // 10 - 1][tMouse[1] // 10 - 1]
+		elif tMouse[1] == 5:
+			pick = itemCrafted
 		else:
 			pick = ItemBar[tMouse[0]][tMouse[1]]
 		if iButton == 1:
 			if not itemPicked[0]:
-				if tMouse[1] == 5:
-					CraftItem()
-					pick = itemCrafted
 				itemPicked[0] = pick[0]
 				itemPicked[1] = pick[1]
 				pick[0], pick[1] = 0, 0
+				if tMouse[1] == 5:
+					CraftItem()
 			else:
 				if not pick[0]:
 					if tMouse[1] != 5:
@@ -337,13 +349,12 @@ def InventoryControl(iButton):
 						itemPicked = swap
 		elif iButton == 3:
 			if not itemPicked[0] or tMouse[1] == 5:
-				if tMouse[1] == 5:
-					CraftItem()
-					pick = itemCrafted
 				if not itemPicked[0]: 
 					itemPicked[0] = pick[0]
 				itemPicked[1] += pick[1] if tMouse[1] == 5 else math.ceil(pick[1] / 2)
 				pick[1] -= pick[1] if tMouse[1] == 5 else math.ceil(pick[1] / 2)
+				if tMouse[1] == 5:
+					CraftItem()
 			else:
 				if not pick[0]:
 					pick[0] = itemPicked[0]

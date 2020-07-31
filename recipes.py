@@ -47,4 +47,5 @@ recipes.addRecipe([3], 			[3], 			False, 		14,		4)			#4 Sticks
 recipes.addRecipe([3, 3], 		[3, 3], 		False, 		21,		1)			#Crafting table
 recipes.addRecipe([3, 3, 3],	[0, 14, 0],		[0, 14, 0], 15,		1)			#Wooden pickaxe
 recipes.addRecipe([20, 20, 20],	[0, 14, 0], 	[0, 14, 0], 16,		1)			#Stone pickaxe
+recipes.addRecipe([3, 14, 3],	[3, 14, 3], 	False, 		22,		1)			#Stone pickaxe
 			

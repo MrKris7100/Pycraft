@@ -64,3 +64,5 @@ blocks.addBlock('Gold pickaxe',		False,		False,		False,		0,			1,			BLOCKS + 'gol
 blocks.addBlock('Diamond pickaxe',	False,		False,		False,		0,			1,			BLOCKS + 'diamond_pickaxe.png')	#19
 blocks.addBlock('Cobblestone',		True,		True,		False,		500,			64,			BLOCKS + 'cobblestone.png')	#20
 blocks.addBlock('Crafting table',	True,		True,		False,		250,			64,			BLOCKS + 'crafting_table.png')	#21
+blocks.addBlock('Wooden fence',		True,		True,		False,		250,			64,			BLOCKS + 'fence_base.png')	#22
+blocks.addBlock('Fence side',		False,		False,		False,		0,			0,			BLOCKS + 'fence_side.png')	#23
