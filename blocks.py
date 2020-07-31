@@ -62,4 +62,5 @@ blocks.addBlock('Stone pickaxe',	False,		False,		False,		0,			1,			BLOCKS + 'sto
 blocks.addBlock('Iron pickaxe',		False,		False,		False,		0,			1,			BLOCKS + 'iron_pickaxe.png')	#17
 blocks.addBlock('Gold pickaxe',		False,		False,		False,		0,			1,			BLOCKS + 'golden_pickaxe.png')	#18
 blocks.addBlock('Diamond pickaxe',	False,		False,		False,		0,			1,			BLOCKS + 'diamond_pickaxe.png')	#19
-blocks.addBlock('Cobblestone',		True,		True,		False,		0,			64,			BLOCKS + 'cobblestone.png')	#20
+blocks.addBlock('Cobblestone',		True,		True,		False,		500,			64,			BLOCKS + 'cobblestone.png')	#20
+blocks.addBlock('Crafting table',		True,		True,		False,		250,			64,			BLOCKS + 'crafting_table.png')	#21

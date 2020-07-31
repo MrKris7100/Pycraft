@@ -55,7 +55,8 @@ txt_m_stage[2] = pygame.image.load("./Assets/Blocks/m_stage_2.png") #Mine stage 
 txt_m_stage[3] = pygame.image.load("./Assets/Blocks/m_stage_3.png") #Mine stage :3
 txt_itembar = pygame.image.load("./Assets/UI/itembar.png") #Itembar
 txt_itemselector = pygame.image.load("./Assets/UI/itemselector.png") #ItemSelector
-txt_inventory = pygame.image.load("./Assets/UI/inventory.png") #ItemSelector
+txt_inventory = pygame.image.load("./Assets/UI/inventory.png") #Inventory
+txt_crafting = pygame.image.load("./Assets/UI/crafting_table.png") #Crafting table
 ########################################################
 ################## PLAYER TEXTURES #####################
 txt_player = [0 for x in range(4)]
@@ -96,8 +97,12 @@ def TimerDiff(hTimer):
 	return int(round(time.time() * 1000)) - hTimer
 	
 def BlockPlace(pX, pY, iID = -1): #Stawianie bloków
+	global crafting, inventory
 	if iID != -1:
 		aMap[pX][pY] = iID
+	elif aMap[pX][pY] == 21:
+		crafting = True
+		inventory = True
 	elif ItemBar[itemSelector][3][1] and blocks.isPlaceable(ItemBar[itemSelector][3][0]) and not blocks.isMineable(aMap[pX][pY]) and blocks.isWalkable(aMap[pX][pY]):
 		if ItemBar[itemSelector][3][0] == 13 and aMap[pX][pY] != 9: return
 		if ItemBar[itemSelector][3][0] == 7 and aMap[pX][pY] != 1: return
@@ -136,22 +141,27 @@ def IDToTexture(iID, iX, iY, iW = 48, iH = 48, bEQ = 0, buff = window): #Zamieni
 		buff.blit(pygame.transform.scale(blocks.getTexture(5), (iW, iH)), (iX, iY))
 
 def DrawInventory():#Funkcja rysowania ekwipunku
-	xOffset = math.floor((width - 490) / 2)
-	yOffset = math.floor((height - 203) / 2)
-	window.blit(txt_inventory, (xOffset, yOffset))
+	xOffset = math.floor((width - 520) / 2)
+	yOffset = math.floor((height - 240) / 2)
+	if crafting:
+		window.blit(txt_crafting, (xOffset, yOffset))
+	else:
+		window.blit(txt_inventory, (xOffset, yOffset))
 	for iX in range(9):
 		for iY in range(4):
 			if ItemBar[iX][iY][1]:
-				IDToTexture(ItemBar[iX][iY][0], 18 + (iX * 40 + iX) + xOffset, 18 + (iY * 40 + iY) + yOffset + (10 if iY == 3 else 0), 32, 32, 1)
-				DrawString(ItemBar[iX][iY][1], 18 + (iX * 40 + iX) + xOffset, 18 + (iY * 40 + iY) + yOffset + 24 + (10 if iY == 3 else 0), 12)
-	for iY in range(2):
-		for iX in range(2):
-			if ItemBar[2 * iX + iY][4][1]:
-				IDToTexture(ItemBar[2 * iX + iY][4][0], 396 + (iX * 40 + iX) + xOffset, 18 + (iY * 40 + iY) + yOffset, 32, 32, 1)
-				DrawString(ItemBar[2 * iX + iY][4][1], 396 + (iX * 40 + iX) + xOffset, 18 + (iY * 40 + iY) + yOffset + 24, 12)
+				IDToTexture(ItemBar[iX][iY][0], 18 + (iX * 40 + iX) + xOffset, 38 + (iY * 40 + iY) + yOffset + (10 if iY == 3 else 0), 32, 32, 1)
+				DrawString(ItemBar[iX][iY][1], 18 + (iX * 40 + iX) + xOffset, 38 + (iY * 40 + iY) + yOffset + 24 + (10 if iY == 3 else 0), 12)
+	size = 2
+	if crafting: size = 3
+	for iY in range(size):
+		for iX in range(size):
+			if ItemBar[size * iX + iY][4][1]:
+				IDToTexture(ItemBar[size * iX + iY][4][0], 406 - (18 if crafting else 0) + (iX * 40 + iX) + xOffset, 38 - (20 if crafting else 0) + (iY * 40 + iY) + yOffset, 32, 32, 1)
+				DrawString(ItemBar[size * iX + iY][4][1], 406 - (18 if crafting else 0) + (iX * 40 + iX) + xOffset, 38 - (20 if crafting else 0) + (iY * 40 + iY) + yOffset + 24, 12)
 	if ItemBar[0][5][1]:
-		IDToTexture(ItemBar[0][5][0], 416 + xOffset, 149 + yOffset, 32, 32, 1)
-		DrawString(ItemBar[0][5][1], 416 + xOffset, 149 + yOffset + 24, 12)
+		IDToTexture(ItemBar[0][5][0], 428 + xOffset, 170 + (20 if crafting else 0) + yOffset, 32, 32, 1)
+		DrawString(ItemBar[0][5][1], 428 + xOffset, 170 + (20 if crafting else 0) + + yOffset + 24, 12)
 	if itemPicked[0]:
 		tMouse = _Mouse()
 		IDToTexture(itemPicked[0], tMouse[0] - 16, tMouse[1] - 16, 32, 32, 1)
@@ -173,7 +183,7 @@ def DrawMap():#Funkcja rysowania mapy
 		buffer.fill((0, 0, 0, 0))
 		for iX in range(oPlayer['X'] - blocksxy[0] - 1, oPlayer['X'] + blocksxy[0] + 2):
 			for iY in range(oPlayer['Y'] - blocksxy[1] - 1, oPlayer['Y'] + blocksxy[1] + 2):
-				if iX > -1 and iX < iMapSize + 1 and iY > -1 and iY < iMapSize + 1:
+				if iX > -1 and iX < iMapSize and iY > -1 and iY < iMapSize:
 					if aMap[iX][iY] == 5:
 						IDToTexture(1, #rysowanie ziemi
 						((iX - (oPlayer['X'] - blocksxy[0]) + 1) * 48), #pozycja X rysowania w oknie
@@ -264,22 +274,24 @@ def _Mouse():
 
 def MouseToInv():
 	tMouse = _Mouse()
-	xOffset = math.floor((width - 490) / 2)
-	yOffset = math.floor((height - 203) / 2)
+	xOffset = math.floor((width - 520) / 2)
+	yOffset = math.floor((height - 240) / 2)
 	for iX in range(9):
 		for iY in range(4):
 			x = 18 + (iX * 40 + iX) + xOffset
-			y = 18 + (iY * 40 + iY) + yOffset + (10 if iY == 3 else 0)
+			y = 38 + (iY * 40 + iY) + yOffset + (10 if iY == 3 else 0)
 			if tMouse[0] in range(x, x + 32) and tMouse[1] in range(y, y + 32):
 				return (iX, iY)
-	for iY in range(2):
-		for iX in range(2):
-			x = 394 + (iX * 40 + iX) + xOffset
-			y = 18 + (iY * 40 + iY) + yOffset
+	size = 2
+	if crafting: size = 3
+	for iY in range(size):
+		for iX in range(size):
+			x = 406 - (18 if crafting else 0) + (iX * 40 + iX) + xOffset
+			y = 38 - (20 if crafting else 0) + (iY * 40 + iY) + yOffset
 			if tMouse[0] in range(x, x+ 32) and tMouse[1] in range(y, y + 32):
-				return (2 * iX + iY, 4)
-	if tMouse[0] in range(xOffset + 416, xOffset + 416 + 32):
-		if tMouse[1] in range(yOffset + 149, yOffset + 149 + 32):
+				return (size * iX + iY, 4)
+	if tMouse[0] in range(xOffset + 428, xOffset + 428 + 32):
+		if tMouse[1] in range(yOffset + 170 + (20 if crafting else 0), yOffset + 170 + (20 if crafting else 0) + 32):
 			return (0, 5)
 	return (-1, -1)
 
@@ -289,6 +301,9 @@ def CraftItem():
 			ItemBar[x][4][1] -= 1
 		if not ItemBar[x][4][1]:
 			ItemBar[x][4][0] = 0
+	craft = recipes.Match([ItemBar[x][4] for x in range(9)])
+	ItemBar[0][5][0] = craft[0]
+	ItemBar[0][5][1] = craft[1]
 
 def InventoryControl(iButton):
 	global itemPicked
@@ -445,6 +460,7 @@ playing = False
 paused = False
 inventory = False
 iFullscreen = 0
+crafting = False
 
 def switch_menu(menu):
 	global active_menu
@@ -741,6 +757,8 @@ while True:
 			if event.key == pygame.K_ESCAPE and playing:
 				if inventory:
 					inventory = False
+				elif crafting:
+					crafting = False
 				else:
 					if playing == 2:
 						active_menu = 5
@@ -749,6 +767,7 @@ while True:
 					pause()
 			elif event.key == pygame.K_e:
 				inventory = not inventory
+				if crafting: crafting = False
 			else:
 				key = event.key
 		elif event.type == pygame.MOUSEBUTTONUP:
