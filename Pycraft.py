@@ -59,11 +59,19 @@ txt_inventory = pygame.image.load("./Assets/UI/inventory.png") #Inventory
 txt_crafting = pygame.image.load("./Assets/UI/crafting_table.png") #Crafting table
 ########################################################
 ################## PLAYER TEXTURES #####################
-txt_player = [0 for x in range(4)]
-txt_player[0] = pygame.image.load("./Assets/Player/up.png")
-txt_player[1] = pygame.image.load("./Assets/Player/right.png")
-txt_player[2] = pygame.image.load("./Assets/Player/down.png")
-txt_player[3] = pygame.image.load("./Assets/Player/left.png")
+txt_player = [[0 for a in range(3)] for x in range(4)]
+txt_player[0][0] = pygame.image.load("./Assets/Player/up.png")
+txt_player[0][1] = pygame.image.load("./Assets/Player/up_1.png")
+txt_player[0][2] = pygame.image.load("./Assets/Player/up_2.png")
+txt_player[1][0] = pygame.image.load("./Assets/Player/right.png")
+txt_player[1][1] = pygame.image.load("./Assets/Player/right_1.png")
+txt_player[1][2] = pygame.image.load("./Assets/Player/right_2.png")
+txt_player[2][0] = pygame.image.load("./Assets/Player/down.png")
+txt_player[2][1] = pygame.image.load("./Assets/Player/down_1.png")
+txt_player[2][2] = pygame.image.load("./Assets/Player/down_2.png")
+txt_player[3][0] = pygame.image.load("./Assets/Player/left.png")
+txt_player[3][1] = pygame.image.load("./Assets/Player/left_1.png")
+txt_player[3][2] = pygame.image.load("./Assets/Player/left_2.png")
 ########################################################
 ################### LIGHT TEXTURES LOAD ################
 txt_light = [0 for x in range(6)]
@@ -210,7 +218,14 @@ def DrawMap():#Funkcja rysowania mapy
 				for player in players:
 					if player['X'] == iX and player['Y'] == iY:
 						window.blit(txt_player[player['Direction']], ((iX - oPlayer['X'] + blocksxy[0]) * 48 + oOffset['X'], (iY - oPlayer['Y'] + blocksxy[1]) * 48 + oOffset['Y'])) #postać
-	window.blit(txt_player[oPlayer['Direction']], (blocksxy[0] * 48, blocksxy[1] * 48)) #postać
+	plr_a = abs(oOffset['X']) or abs(oOffset['Y'])
+	if plr_a in [18, 12]:
+		plr_a = 1
+	elif plr_a in [36, 42]:
+		plr_a = 2
+	else:
+		plr_a = 0
+	window.blit(txt_player[oPlayer['Direction']][plr_a], (blocksxy[0] * 48, blocksxy[1] * 48)) #postać
 	if oOffset['X'] or oOffset['Y']:
 		window.blit(buffer2, (oOffset['X'] - 48, oOffset['Y'] - 48))
 	else:
@@ -768,7 +783,8 @@ while True:
 			pygame.quit()
 			exit()
 		elif event.type == pygame.KEYUP:
-			key = None
+			if event.key == key:
+				key = None
 		elif event.type == pygame.KEYDOWN:
 			if event.key == pygame.K_ESCAPE and playing:
 				if inventory:
